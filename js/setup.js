@@ -132,16 +132,23 @@
     if (!i.hasPassword) need.push('pw');
     if (!i.hasToken) need.push('token');
     if (!need.length) { box.innerHTML = '<div class="box tip small">✅ 저장할 준비가 되었습니다. 관리자 비밀번호를 넣고 저장하세요.</div>'; return; }
+    // Vercel 화면 바로 가기 (팀·프로젝트 이름을 알면 그 화면으로, 모르면 프로젝트 고르는 화면으로)
+    const vBase = i.vercelTeam && i.vercelProject ? `https://vercel.com/${encodeURIComponent(i.vercelTeam)}/${encodeURIComponent(i.vercelProject)}` : '';
+    const vPick = 'https://vercel.com/d?to=%2F%5Bteam%5D%2F%5Bproject%5D%2Fsettings%2Fenvironment-variables&title=Environment+Variables';
+    const vEnv = vBase ? vBase + '/settings/environment-variables' : vPick;
+    const vDep = vBase ? vBase + '/deployments' : 'https://vercel.com/d?to=%2F%5Bteam%5D%2F%5Bproject%5D%2Fdeployments&title=Deployments';
     const tokenUrl = 'https://github.com/settings/personal-access-tokens/new?' + new URLSearchParams({ name: ('3D 전시관 관리 (' + i.repo + ')').slice(0, 40), description: '3D 학생 작품 전시관의 사이트 설정·사진 업데이트 버튼용', target_name: i.owner, expires_in: '366', actions: 'write', contents: 'write', workflows: 'write' }).toString();
     box.innerHTML = `<div class="box warn small su-guide">
       <div class="bt">🔑 저장하려면 한 번만 준비가 필요해요 (약 5분)</div>
-      ${need.includes('pw') ? '<p>Vercel에 <b>ADMIN_PASSWORD</b>(관리자 비밀번호)가 없습니다. 아래 ②에서 함께 넣어 주세요.</p>' : ''}
+      ${need.includes('pw') ? `<p>Vercel에 <b>ADMIN_PASSWORD</b>(관리자 비밀번호)가 없습니다. <a href="${vEnv}" target="_blank" rel="noopener">환경 변수 화면</a>에서 Add Environment Variable → Key <b>ADMIN_PASSWORD</b>로 함께 넣어 주세요.</p>` : ''}
       ${need.includes('token') ? `<ol>
         <li><a class="btnlike g" href="${tokenUrl}" target="_blank" rel="noopener">① GitHub 접근 키 만들기 (새 창)</a><br>
           이름·기간·권한(Actions · Contents · Workflows 쓰기)은 미리 채워져 있어요. <b>Repository access → Only select repositories → <code>${esc(i.repo)}</code></b>를 고르고 맨 아래 <b>Generate token</b> → 나온 키(github_pat_…)를 <b>복사</b>하세요.</li>
-        <li><a class="btnlike k" href="https://vercel.com/dashboard" target="_blank" rel="noopener">② Vercel 열기 (새 창)</a><br>
-          이 프로젝트 → <b>Settings → Environment Variables</b> → Key <b>GITHUB_TOKEN</b>, Value에 복사한 키를 붙여넣고 <b>Save</b>.</li>
-        <li>같은 화면 위쪽 <b>Deployments → 맨 위 줄 ⋯ → Redeploy</b>를 누르고 1분 기다립니다.</li>
+        <li><a class="btnlike k" href="${vEnv}" target="_blank" rel="noopener">② Vercel 환경 변수 화면 열기 (새 창)</a><br>
+          ⓐ 오른쪽 위 <b>Add Environment Variable</b> 버튼 클릭 → ⓑ Key에 <b>GITHUB_TOKEN</b> → ⓒ Value에 복사한 키 붙여넣기 → ⓓ <b>Save</b>
+          <div class="muted small">화면이 안 열리면: <a href="${vPick}" target="_blank" rel="noopener">여기</a>를 눌러 내 프로젝트를 고르거나, Vercel → 이 프로젝트 → 위쪽 <b>Settings</b> 탭 → <b>Environment Variables</b>로 들어가세요.</div></li>
+        <li><a class="btnlike k" href="${vDep}" target="_blank" rel="noopener">③ Vercel 배포 화면 열기 (새 창)</a><br>
+          맨 위 배포 줄 오른쪽 <b>⋯</b> → <b>Redeploy</b> → 다시 <b>Redeploy</b>를 누르고 1분 기다립니다.</li>
         <li>이 화면으로 돌아와 <button class="ghost" id="suRecheck">다시 확인</button>을 누르세요. 입력한 내용은 그대로 남아 있어요.</li></ol>` : ''}
     </div>`;
     const rc = $('#suRecheck'); if (rc) rc.onclick = () => loadInfo();

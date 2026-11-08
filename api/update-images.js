@@ -120,7 +120,9 @@ module.exports = async (req, res) => {
     // 처음 설정 화면용: 무엇이 준비되었는지만 알려 줌 (비밀 값은 절대 내보내지 않음)
     if (body0 && body0.action === 'info') {
       const [owner, slug] = repoName().split('/');
-      return res.status(200).json({ ok: true, owner, repo: slug, hasPassword: !!env('ADMIN_PASSWORD'), hasToken: !!env('GITHUB_TOKEN'), connected: !!(env('VERCEL_GIT_REPO_OWNER') || env('GITHUB_REPO')) });
+      // Vercel 팀 이름: 배포 주소(프로젝트-해시9자리-팀.vercel.app)에서 찾아냄 → 설정 화면 바로 가기 링크용
+      const vurl = env('VERCEL_URL'), team = (vurl.match(/-[a-z0-9]{9}-([a-z0-9-]+)\.vercel\.app$/) || [])[1] || '';
+      return res.status(200).json({ ok: true, owner, repo: slug, hasPassword: !!env('ADMIN_PASSWORD'), hasToken: !!env('GITHUB_TOKEN'), connected: !!(env('VERCEL_GIT_REPO_OWNER') || env('GITHUB_REPO')), vercelTeam: team, vercelProject: env('VERCEL_PROJECT_NAME') || slug || '', vercelUrl: vurl });
     }
     const missing = ['ADMIN_PASSWORD', 'GITHUB_TOKEN'].filter(k => !env(k));
     if (missing.length) return res.status(500).json({ error: `Vercel 환경 변수 ${missing.join(', ')} 가(이) 설정되지 않았습니다. 설정 후 Redeploy 해 주세요.` });
