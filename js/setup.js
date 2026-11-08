@@ -132,13 +132,13 @@
     if (!i.hasPassword) need.push('pw');
     if (!i.hasToken) need.push('token');
     if (!need.length) { box.innerHTML = '<div class="box tip small">✅ 저장할 준비가 되었습니다. 관리자 비밀번호를 넣고 저장하세요.</div>'; return; }
-    const tokenUrl = 'https://github.com/settings/personal-access-tokens/new?' + new URLSearchParams({ name: ('3D 전시관 관리 (' + i.repo + ')').slice(0, 40), description: '3D 학생 작품 전시관의 사이트 설정·사진 업데이트 버튼용', target_name: i.owner, expires_in: '366', actions: 'write' }).toString();
+    const tokenUrl = 'https://github.com/settings/personal-access-tokens/new?' + new URLSearchParams({ name: ('3D 전시관 관리 (' + i.repo + ')').slice(0, 40), description: '3D 학생 작품 전시관의 사이트 설정·사진 업데이트 버튼용', target_name: i.owner, expires_in: '366', actions: 'write', contents: 'write', workflows: 'write' }).toString();
     box.innerHTML = `<div class="box warn small su-guide">
       <div class="bt">🔑 저장하려면 한 번만 준비가 필요해요 (약 5분)</div>
       ${need.includes('pw') ? '<p>Vercel에 <b>ADMIN_PASSWORD</b>(관리자 비밀번호)가 없습니다. 아래 ②에서 함께 넣어 주세요.</p>' : ''}
       ${need.includes('token') ? `<ol>
         <li><a class="btnlike g" href="${tokenUrl}" target="_blank" rel="noopener">① GitHub 접근 키 만들기 (새 창)</a><br>
-          이름·기간·권한은 미리 채워져 있어요. <b>Repository access → Only select repositories → <code>${esc(i.repo)}</code></b>를 고르고 맨 아래 <b>Generate token</b> → 나온 키(github_pat_…)를 <b>복사</b>하세요.</li>
+          이름·기간·권한(Actions · Contents · Workflows 쓰기)은 미리 채워져 있어요. <b>Repository access → Only select repositories → <code>${esc(i.repo)}</code></b>를 고르고 맨 아래 <b>Generate token</b> → 나온 키(github_pat_…)를 <b>복사</b>하세요.</li>
         <li><a class="btnlike k" href="https://vercel.com/dashboard" target="_blank" rel="noopener">② Vercel 열기 (새 창)</a><br>
           이 프로젝트 → <b>Settings → Environment Variables</b> → Key <b>GITHUB_TOKEN</b>, Value에 복사한 키를 붙여넣고 <b>Save</b>.</li>
         <li>같은 화면 위쪽 <b>Deployments → 맨 위 줄 ⋯ → Redeploy</b>를 누르고 1분 기다립니다.</li>

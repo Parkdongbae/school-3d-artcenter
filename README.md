@@ -54,7 +54,7 @@
 | `ADMIN_PASSWORD` | 사이트 설정 저장·F9 관리 버튼을 누를 때 쓰는 비밀번호 | 배포할 때 입력 (Vercel → Settings → Environment Variables에서 바꿀 수 있음) |
 | `GITHUB_TOKEN` | 사이트가 선생님 대신 GitHub에 설정·사진을 저장하도록 허락하는 열쇠 | 사이트 설정 화면의 안내 버튼으로 만들고 Vercel에 붙여넣기 |
 
-접근 키 만들 때 꼭 확인할 것: **Repository access → Only select repositories → 내 저장소 하나**, 권한은 **Actions: Read and write** (안내 버튼으로 열면 미리 채워져 있습니다). 키를 넣거나 바꾼 뒤에는 Vercel **Deployments → ⋯ → Redeploy**를 해야 적용됩니다.
+접근 키 만들 때 꼭 확인할 것: **Repository access → Only select repositories → 내 저장소 하나**, 권한은 **Actions · Contents · Workflows: Read and write** (안내 버튼으로 열면 미리 채워져 있습니다). 처음 저장할 때 사이트가 관리 기능(자동 작업 파일)을 저장소에 스스로 설치합니다. 키를 넣거나 바꾼 뒤에는 Vercel **Deployments → ⋯ → Redeploy**를 해야 적용됩니다.
 
 ---
 
@@ -71,7 +71,7 @@
 
 - **예시 작품이 보여요** → 아직 사이트 설정을 저장하지 않았거나, 시트 공유가 "링크가 있는 모든 사용자"가 아닙니다.
 - **사진이 "불러오는 중"에서 안 바뀌어요** → 사진 폴더 `(File responses)` 공유를 확인하세요. 학생이 많으면 F9 → 작품 사진 업데이트를 누르세요.
-- **저장 버튼에서 401 / 403 / 404** → 접근 키가 틀렸거나(401), Actions 권한이 없거나(403), 접근 키에 내 저장소를 선택하지 않았습니다(404). 화면의 안내 문구를 따라 주세요.
+- **저장 버튼에서 401 / 403 / 404** → 접근 키가 틀렸거나(401), 권한(Actions · Contents · Workflows 쓰기)이 부족하거나(403), 접근 키에 내 저장소를 선택하지 않았습니다(404). 화면의 안내 문구를 따라 주세요.
 - **비용** → GitHub·Vercel 무료 계정으로 운영할 수 있습니다. (Vercel 무료는 월 전송량 100GB)
 
 ---
