@@ -135,7 +135,7 @@
     settings() {
       return {
         sheetId: LS.get('sheet_id', C.sheetId), sheetGid: LS.get('sheet_gid', C.sheetGid),
-        webhook: LS.get('comment_webhook_url', C.commentWebhookUrl)
+        webhook: LS.get('comment_webhook_url', '') || C.commentWebhookUrl || ''
       };
     },
     cacheCsv(text) { LS.set('cached_csv', text); },

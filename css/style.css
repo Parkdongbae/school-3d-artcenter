@@ -297,3 +297,17 @@ fieldset.admin-pass { border-color: color-mix(in srgb, var(--accent) 50%, transp
 .setup-banner[hidden] { display: none; }
 .setup-banner div { display: flex; flex-direction: column; gap: 3px; } .setup-banner span { color: var(--muted); font-size: 14px; }
 @media (max-width: 720px) { .su-grid { grid-template-columns: 1fr; } .setup-banner { flex-direction: column; align-items: flex-start; margin-top: -10px; } }
+/* 감상평 — Apps Script 만드는 방법 */
+details.howto { margin-top: 10px; border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; background: rgba(255,255,255,.03); }
+details.howto summary { cursor: pointer; font-weight: 700; font-size: 14px; color: var(--accent); }
+details.howto ol { margin: 10px 0 4px; padding-left: 20px; font-size: 13px; line-height: 1.7; }
+details.howto ol > li { margin-top: 6px; }
+details.howto ul { margin: 4px 0; padding-left: 18px; }
+details.howto a { color: var(--accent); }
+details.howto code { background: rgba(255,255,255,.12); padding: 1px 6px; border-radius: 5px; font-size: 12px; }
+.codebox { position: relative; margin-top: 8px; }
+.codebox pre { margin: 0; max-height: 220px; overflow: auto; background: rgba(0,0,0,.35); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font: 12px/1.5 Consolas, 'D2Coding', monospace; color: #dfe6ee; white-space: pre; user-select: all; }
+.codebox button { position: absolute; top: 6px; right: 6px; padding: 4px 10px; font-size: 12px; }
+fieldset { min-width: 0; } /* 긴 코드 줄 때문에 창 밖으로 넓어지지 않게 */
+.codebox, .codebox pre { max-width: 100%; }
+.codebox button { position: static; margin-top: 6px; }

@@ -481,6 +481,8 @@
       $('#gsNow').innerHTML = `지금 사이트 설정: <b>${C.autoSync ? `켜짐 · ${secTxt(C.autoSyncSeconds || 120)}마다` : '꺼짐'}</b>`;
       $('#gsOn').value = C.autoSync ? 'true' : 'false';
       { const v = String(C.autoSyncSeconds || 120); if (![...$('#gsSec').options].some(o => o.value === v)) $('#gsSec').add(new Option(secTxt(+v), v)); $('#gsSec').value = v; }
+      { const site = C.commentWebhookUrl || '', dev = LS.get('comment_webhook_url', '');
+        $('#hookNow').innerHTML = site ? '지금 모든 기기 주소: <b>설정됨</b> (감상평이 시트로 모입니다)' + (dev && dev !== site ? ' · 이 기기는 다른 주소를 씁니다' : '') : '지금 모든 기기 주소: <b>없음</b>' + (dev ? ' · 이 기기에서만 시트로 보냅니다' : ' (감상평은 각 기기에만 저장)'); }
       $('#dataStats').textContent = `현재 ${this.ex.rooms.length}개 전시실 · 학생 ${this.ex.studentCount}명 · 작품 ${this.ex.artworks.length}점`;
       this.openModal('dataModal');
     }
@@ -522,6 +524,13 @@
       $('#saveData').onclick = () => this.saveData(); $('#pasteBtn').onclick = () => this.pasteData();
       $('#exportBtn').onclick = () => this.exportComments(); $('#syncNow').onclick = () => { this.lastCsv = ''; this.sync(false).then(() => this.toast('구글 시트를 다시 확인했습니다.')); };
       $('#gsApply').onclick = () => this.applyGlobalSync();
+      $('#hookApply').onclick = () => this.applyHook();
+      $('#gasCopy').onclick = async () => {
+        const code = $('#gasCode').textContent;
+        try { await navigator.clipboard.writeText(code); }
+        catch (e) { const r = document.createRange(); r.selectNodeContents($('#gasCode')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); document.execCommand('copy'); }
+        $('#gasCopy').textContent = '복사했습니다 ✓'; setTimeout(() => $('#gasCopy').textContent = '코드 복사', 2000);
+      };
       $('#bwApply').onclick = () => this.applyBadWords();
       $('#openSetup').onclick = () => { this.closeModal('dataModal'); Setup.open(); };
       $('#setupStart').onclick = () => Setup.open();
@@ -643,6 +652,38 @@
         };
         this._gsTimer = setTimeout(poll, 5000);
       } catch (e) { $('#gsApply').disabled = false; say(e.message, 'err'); }
+    }
+    async applyHook() {
+      const msg = $('#hookMsg'), pass = $('#updPass').value.trim(), url = $('#setHook').value.trim();
+      const say = (t, cls = '') => { msg.className = 'upd-msg ' + cls; msg.innerHTML = t; };
+      if (url && !/^https:\/\/script\.google\.com\/(macros|a\/macros\/[A-Za-z0-9.-]+)\/s\/[A-Za-z0-9_-]+\/exec$/.test(url)) { say('주소 형식이 맞지 않습니다. 배포 화면의 <b>웹 앱 URL</b>(https://script.google.com/…/exec)을 그대로 붙여넣어 주세요. (라이브러리 주소·편집기 주소가 아닙니다)', 'err'); return; }
+      if (location.protocol === 'file:') { say('이 기능은 Vercel에 배포된 사이트 주소에서만 작동합니다. 이 기기에서만 쓰려면 아래 <b>저장</b>을 누르세요.', 'err'); return; }
+      if (!pass) { say('맨 위 "관리자 비밀번호" 칸에 비밀번호를 입력해 주세요.', 'err'); return; }
+      const post = async payload => {
+        const r = await fetch('/api/update-images', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pass, ...payload }) });
+        if (r.status === 404) throw new Error('서버 기능을 찾을 수 없습니다. Vercel에 배포된 주소에서 사용해 주세요.');
+        const txt = await r.text(); let j = {}; try { j = JSON.parse(txt); } catch (e) { }
+        if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+        return j;
+      };
+      clearTimeout(this._hookTimer); $('#hookApply').disabled = true;
+      try {
+        say('저장을 요청하는 중...');
+        const started = Date.now(); await post({ action: 'config', config: { hook: url } });
+        try { sessionStorage.setItem('upd_pass', pass); } catch (e) { }
+        LS.set('comment_webhook_url', url); // 이 기기에는 바로 적용
+        const poll = async () => {
+          try {
+            const j = await post({ action: 'status', job: 'config' }), run = j.run;
+            const fresh = run && new Date(run.createdAt).getTime() > started - 60000;
+            if (!fresh || run.status !== 'completed') { say('이 기기에는 바로 적용했습니다. GitHub이 모든 기기용 주소를 저장하는 중...', 'busy'); if (Date.now() - started < 10 * 60000) this._hookTimer = setTimeout(poll, 6000); else $('#hookApply').disabled = false; return; }
+            $('#hookApply').disabled = false;
+            if (run.conclusion === 'success') say(`${url ? '주소를 저장했습니다' : '주소를 지웠습니다'}. 1~2분 뒤 배포가 끝나면 모든 기기에 적용됩니다. ${url ? '감상평을 하나 써 보고 시트에 한 줄이 생기는지 확인해 보세요. ' : ''}<a href="${run.url}" target="_blank" rel="noopener">GitHub에서 보기</a>`, 'ok');
+            else say(`저장에 실패했습니다. <a href="${run.url}" target="_blank" rel="noopener">GitHub에서 기록 보기</a>`, 'err');
+          } catch (e) { $('#hookApply').disabled = false; say(e.message, 'err'); }
+        };
+        this._hookTimer = setTimeout(poll, 5000);
+      } catch (e) { $('#hookApply').disabled = false; say(e.message, 'err'); }
     }
     renderBadWordsNow() {
       const c = window.BADWORDS_CUSTOM || { words: [], allow: [] }, chip = a => a.length ? a.map(w => `<span class="chip">${esc(w)}</span>`).join('') : '<span class="muted">없음</span>';

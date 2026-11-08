@@ -150,6 +150,8 @@ module.exports = async (req, res) => {
       const c = body.config || {}, out = {};
       const BAD = new RegExp('["\'`<>\\\\\\r\\n]', 'g'); // 따옴표·꺾쇠·역슬래시·줄바꿈 제거
       for (const k of ['title', 'line1', 'line2', 'subtitle', 'school', 'period', 'sheetId', 'sheetGid']) if (c[k] !== undefined) out[k] = String(c[k]).replace(BAD, '').slice(0, 100);
+      const HOOK = /^https:\/\/script\.google\.com\/(macros|a\/macros\/[A-Za-z0-9.-]+)\/s\/[A-Za-z0-9_-]+\/exec$/;
+      if (c.hook !== undefined) { const h = String(c.hook).trim(); if (h && (h.length > 300 || !HOOK.test(h))) return res.status(400).json({ error: '웹 앱 주소 형식이 올바르지 않습니다.' }); out.hook = h; }
       const logo = String(body.logo || '');
       if (logo && logo !== 'remove' && !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(logo)) return res.status(400).json({ error: '로고 그림 형식이 올바르지 않습니다.' });
       if (logo.length > 60000) return res.status(400).json({ error: '로고 그림이 너무 큽니다. 더 작은 그림을 골라 주세요.' });

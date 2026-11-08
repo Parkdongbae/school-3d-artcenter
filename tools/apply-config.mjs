@@ -1,7 +1,7 @@
 /* =========================================================
  * 사이트 설정 저장 (GitHub Actions 에서 실행)
  *  환경 변수
- *   SETTINGS : {"title","line1","line2","subtitle","school","period","sheetId","sheetGid"} (JSON, 없는 항목은 그대로 둠)
+ *   SETTINGS : {"title","line1","line2","subtitle","school","period","sheetId","sheetGid","hook"} (JSON, 없는 항목은 그대로 둠)
  *   LOGO     : '' (그대로) | 'remove' (로고 지우기) | data:image/png;base64,... (새 로고)
  *  → js/config.js, assets/logo.*, js/logo.js 를 고침
  * ========================================================= */
@@ -45,6 +45,12 @@ if (has('sheetGid')) {
   const gid = String(s.sheetGid ?? '0').trim() || '0';
   if (!/^\d{1,12}$/.test(gid)) { console.error('탭 번호(gid)는 숫자여야 합니다.'); process.exit(1); }
   set('sheetGid', q(gid)); changed.push('탭 번호');
+}
+
+if (has('hook')) {
+  const h = String(s.hook || '').trim();
+  if (h && !/^https:\/\/script\.google\.com\/(macros|a\/macros\/[A-Za-z0-9.-]+)\/s\/[A-Za-z0-9_-]+\/exec$/.test(h)) { console.error('웹 앱 주소 형식이 올바르지 않습니다.'); process.exit(1); }
+  set('commentWebhookUrl', q(h)); changed.push(h ? '감상평 웹 앱 주소' : '감상평 웹 앱 주소 지움');
 }
 
 // 로고
