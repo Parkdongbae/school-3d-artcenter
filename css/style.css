@@ -41,6 +41,7 @@ svg { stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; 
 #syncDot[data-state="ok"] { background: #5ee08f; box-shadow: 0 0 8px #5ee08f; }
 #syncDot[data-state="fail"] { background: #ff8a65; }
 .hero-logo { display: block; height: 64px; width: auto; background: #fff; padding: 8px 12px; border-radius: 12px; margin-bottom: 26px; box-shadow: 0 10px 30px -12px rgba(0,0,0,.6); }
+.hero-logo[hidden] { display: none; }
 .load-logo { height: 46px; background: #fff; padding: 6px 10px; border-radius: 10px; margin-bottom: 18px; }
 .eyebrow { font-size: 12px; letter-spacing: .3em; color: var(--accent); font-weight: 700; margin-bottom: 14px; }
 .hero h1 { font-family: var(--serif); font-weight: 900; font-size: clamp(36px, 7vw, 92px); line-height: 1.1; word-break: keep-all; letter-spacing: -0.02em; }
@@ -311,3 +312,10 @@ details.howto code { background: rgba(255,255,255,.12); padding: 1px 6px; border
 fieldset { min-width: 0; } /* 긴 코드 줄 때문에 창 밖으로 넓어지지 않게 */
 .codebox, .codebox pre { max-width: 100%; }
 .codebox button { position: static; margin-top: 6px; }
+/* F9 맨 위 — 선생님용 매뉴얼 버튼 */
+.manual-link { display: flex; align-items: center; gap: 12px; margin: 12px 0 4px; padding: 12px 16px; border-radius: 14px; text-decoration: none; color: var(--text); background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 22%, transparent), rgba(255,255,255,.04)); border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); transition: transform .15s, background .2s; }
+.manual-link:hover { transform: translateY(-1px); background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 32%, transparent), rgba(255,255,255,.06)); }
+.manual-link .mi { font-size: 28px; line-height: 1; }
+.manual-link b { display: block; font-size: 15px; }
+.manual-link small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; line-height: 1.5; }
+.manual-link .mo { margin-left: auto; white-space: nowrap; font-size: 13px; font-weight: 700; color: var(--accent); }
