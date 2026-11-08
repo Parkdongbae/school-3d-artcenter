@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>학생 작품 3D 온라인 전시관</title>
+  <meta name="description" content="학생들이 직접 만든 작품을 지역별 대표 미술관을 모티프로 한 3D 가상 전시관에서 감상하세요.">
+  <meta property="og:title" content="학생 작품 3D 온라인 전시관">
+  <meta property="og:description" content="지역별 대표 미술관을 모티프로 한 3D 가상 전시관">
+  <meta name="theme-color" content="#14161a">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2314161a'/%3E%3Cpath d='M12 50h40M16 46V28M26 46V28M38 46V28M48 46V28M10 26L32 12l22 14z' stroke='%23e6b85c' stroke-width='4' fill='none' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Noto+Serif+KR:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=20">
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+</head>
+<body>
+  <div id="stage"></div>
+
+  <!-- ============ 첫 화면 ============ -->
+  <main id="landing">
+    <header class="hero">
+      <div class="hero-top">
+        <span class="brand"><svg viewBox="0 0 64 64" width="26" height="26"><path d="M12 50h40M16 46V28M26 46V28M38 46V28M48 46V28M10 26L32 12l22 14z" stroke="currentColor" stroke-width="4" fill="none" stroke-linejoin="round"/></svg> 3D ART CENTER</span>
+        <div class="hero-actions">
+          <button id="landList" class="ghost">작품 목록</button>
+          <button id="landInfo" class="ghost">관람 안내·화질</button>
+          <button id="landData" class="ghost admin-only">데이터 관리 <i id="syncDot" data-state="wait"></i></button>
+        </div>
+      </div>
+      <div id="setupBanner" class="setup-banner" hidden><div><b>👋 우리 학교 전시관으로 바꿔 볼까요?</b><span>지금은 예시 작품이 보입니다. 구글 시트 주소와 전시 제목만 넣으면 됩니다.</span></div><button id="setupStart" class="primary">사이트 설정 시작</button></div>
+      <img id="heroLogo" class="hero-logo" alt="학교 로고" hidden>
+      <p class="eyebrow">STUDENT EXHIBITION</p>
+      <h1 id="heroTitle">우리 학교<br>졸업생 미술 작품전</h1>
+      <p id="heroSub" class="hero-sub"></p>
+      <p id="heroMeta" class="hero-meta"></p>
+      <div id="heroStats" class="hero-stats"></div>
+    </header>
+    <section class="pick">
+      <div class="pick-head">
+        <h2>어느 미술관에서 관람할까요?</h2>
+        <p>지역을 대표하는 미술관의 건축에서 영감을 받은 열두 개의 전시관입니다. 미술관 앞 광장에서 출발해 입구로 걸어 들어가 보세요.</p>
+      </div>
+      <div id="museumGrid" class="museum-grid"></div>
+      <p class="disclaimer">각 전시관은 실제 미술관의 건축적 특징(재료·공간 구성)을 참고해 만든 교육용 가상 공간이며, 해당 미술관과 관계가 없습니다.</p>
+    </section>
+  </main>
+
+  <!-- ============ 관람 HUD ============ -->
+  <div id="hud">
+    <div class="hud-left">
+      <button id="backBtn" class="icon-btn" title="미술관 선택으로"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" /></svg></button>
+      <div class="hud-title"><span id="hudRegion"></span><b id="hudName"></b><em id="hudRoom">미술관 앞</em></div>
+    </div>
+    <div class="hud-right">
+      <label class="select-wrap" title="전시실로 이동"><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><select id="roomSelect"></select><span>전시실 이동</span></label>
+      <button id="listBtn" class="pill" title="작품 목록·검색"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg><span>작품 목록</span></button>
+      <button id="muteBtn" class="icon-btn" title="배경음악 끄기 (M)"><svg class="on" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12"/></svg><svg class="off" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg></button>
+      <button id="infoBtn" class="icon-btn" title="미술관 소개·조작법·화질"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg></button>
+      <button id="dataBtn" class="icon-btn admin-only" title="데이터 관리 (F9)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></button>
+    </div>
+    <canvas id="minimap" title="미니맵 — 누르면 해당 전시실로 이동"></canvas>
+    <button id="enterBtn">미술관 안으로 들어가기 <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    <div id="joy"><div id="joyKnob"></div></div>
+    <div id="crosshair"></div>
+  </div>
+  <div id="tip"></div>
+  <div id="fade"></div>
+  <div id="toasts"></div>
+
+  <!-- ============ 로딩 ============ -->
+  <div id="loading">
+    <div class="load-card">
+      <img class="load-logo" src="assets/logo.png" alt="" onerror="this.remove()">
+      <p id="loadRegion" class="eyebrow"></p>
+      <h2 id="loadName"></h2>
+      <p id="loadDesc"></p>
+      <div class="load-track"><div id="loadBar"></div></div>
+      <small>전시관을 짓고 있어요…</small>
+    </div>
+  </div>
+
+  <!-- ============ 작품 상세 ============ -->
+  <div id="artModal" class="modal">
+    <div class="sheet art-sheet">
+      <button class="close" data-close aria-label="닫기">×</button>
+      <div id="artImgWrap" class="art-img"><img id="artImg" alt=""><span class="noimg-text">이미지가 없습니다</span></div>
+      <div class="art-info">
+        <div class="art-nav"><button id="prevArt" aria-label="이전 작품">‹</button><span id="artIndex"></span><button id="nextArt" aria-label="다음 작품">›</button></div>
+        <h2 id="artTitle"></h2>
+        <p class="artist"><b id="artArtist"></b> <span id="artMeta"></span></p>
+        <p id="artDesc" class="desc"></p>
+        <button id="likeBtn" class="like"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.5-9.3C1 8 3.4 4.5 7 4.5c2 0 3.6 1.1 5 3 1.4-1.9 3-3 5-3 3.6 0 6 3.5 4.5 7.2C19.5 16.4 12 21 12 21z"/></svg> 좋아요 <b id="likeCount">0</b></button>
+        <h4>감상평 <small id="cmtCount">0</small></h4>
+        <ul id="cmtList" class="cmts"></ul>
+        <form id="cmtForm" class="cmt-form">
+          <div class="row"><input id="cmtId" placeholder="학번" maxlength="6" inputmode="numeric" autocomplete="off"><input id="cmtName" placeholder="이름" maxlength="10" autocomplete="off"></div>
+          <div class="row"><input id="cmtText" placeholder="작품을 보고 느낀 점을 남겨 주세요" maxlength="200" autocomplete="off"><button type="submit">등록</button></div>
+          <small>감상평은 실명(학번·이름)으로 남습니다. 친구의 작품을 존중해 주세요.</small>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 작품 목록 ============ -->
+  <div id="listModal" class="modal">
+    <div class="sheet list-sheet">
+      <button class="close" data-close aria-label="닫기">×</button>
+      <h2>작품 목록</h2>
+      <input id="listSearch" class="search" placeholder="이름, 학번, 작품 제목으로 찾기">
+      <div id="listBody"></div>
+    </div>
+  </div>
+
+  <!-- ============ 미술관 소개 ============ -->
+  <div id="infoModal" class="modal">
+    <div class="sheet info-sheet"><button class="close" data-close aria-label="닫기">×</button><div id="infoBody"></div></div>
+  </div>
+
+  <!-- ============ 사이트 설정 ============ -->
+  <div id="setupModal" class="modal">
+    <div class="sheet setup-sheet">
+      <button class="close" data-close aria-label="닫기">×</button>
+      <h2>🛠 사이트 설정</h2>
+      <p class="muted">처음 한 번만 하면 됩니다. 입력한 내용은 저장하기 전까지 이 기기에 임시로 남아 있어요.</p>
+      <fieldset>
+        <legend>① 구글 시트 연결</legend>
+        <label>학생 응답이 쌓이는 구글 시트의 주소를 통째로 붙여넣으세요<input id="suSheet" placeholder="https://docs.google.com/spreadsheets/d/……/edit#gid=0"></label>
+        <div class="btns"><button id="suCheck" class="ghost">연결 확인</button></div>
+        <p id="suSheetMsg" class="upd-msg"></p>
+        <p class="muted small">시트는 공유 → 일반 액세스 → <b>링크가 있는 모든 사용자 · 뷰어</b>로 되어 있어야 합니다.</p>
+      </fieldset>
+      <fieldset>
+        <legend>② 전시 정보</legend>
+        <div class="su-grid">
+          <div>
+            <label>전시 제목 — 첫째 줄<input id="suLine1" maxlength="30" placeholder="예: ○○중학교 제10회"></label>
+            <label>전시 제목 — 둘째 줄 (선택)<input id="suLine2" maxlength="30" placeholder="예: 졸업생 미술 작품전"></label>
+            <label>부제<input id="suSub" maxlength="60" placeholder="예: 졸업생들의 손길이 담긴 3D 온라인 전시관"></label>
+            <div class="gs-row"><label>학교 이름<input id="suSchool" maxlength="30"></label><label>전시 기간<input id="suPeriod" maxlength="30" placeholder="예: 연중 무휴"></label></div>
+          </div>
+          <div><div class="muted small" style="margin:10px 0 6px">미리 보기 (미술관 현수막)</div><img id="suPoster" class="su-poster" alt="현수막 미리 보기"></div>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>③ 학교 로고 (선택)</legend>
+        <div class="su-logo"><div id="suLogoPrev" class="su-logo-prev"></div>
+          <div><label class="su-file">로고 그림 고르기 (PNG·JPG)<input id="suLogo" type="file" accept="image/png,image/jpeg,image/webp"></label>
+            <label class="check"><input type="checkbox" id="suNoLogo"> 로고 없이 쓰기</label></div></div>
+      </fieldset>
+      <fieldset>
+        <legend>④ 저장 — 모든 기기에 적용</legend>
+        <div id="suReady"></div>
+        <label>관리자 비밀번호 (배포할 때 정한 ADMIN_PASSWORD)<input id="suPass" type="password" autocomplete="off"></label>
+        <div class="btns"><button id="suSave" class="primary">저장하고 모든 기기에 적용</button><button id="suTry" class="ghost">이 기기에서만 먼저 보기</button></div>
+        <p id="suSaveMsg" class="upd-msg"></p>
+      </fieldset>
+    </div>
+  </div>
+
+  <!-- ============ 데이터 관리 ============ -->
+  <div id="dataModal" class="modal">
+    <div class="sheet data-sheet">
+      <button class="close" data-close aria-label="닫기">×</button>
+      <h2>데이터 관리</h2>
+      <p id="dataStats" class="muted"></p>
+      <div class="btns" style="margin-top:10px"><button id="openSetup" class="primary">🛠 사이트 설정 (전시 제목 · 구글 시트 · 로고)</button></div>
+      <fieldset class="admin-pass">
+        <legend>관리자 비밀번호</legend>
+        <label>아래의 "모든 기기에 적용"·"지금 업데이트" 버튼을 누를 때 필요합니다<input id="updPass" type="password" autocomplete="off" placeholder="Vercel에 설정한 ADMIN_PASSWORD"></label>
+      </fieldset>
+      <fieldset>
+        <legend>구글 설문 응답 시트</legend>
+        <label>시트 ID<input id="setSheet"></label>
+        <label>시트 탭 번호 (gid)<input id="setGid"></label>
+        <label class="check"><input type="checkbox" id="setAuto"> 이 기기에서 새 응답 자동 확인 (이 기기에만 적용)</label>
+        <div class="btns"><button id="syncNow" class="ghost">지금 다시 불러오기</button><button id="sampleBtn" class="ghost">예시 데이터 보기</button></div>
+      </fieldset>
+      <fieldset>
+        <legend>모든 기기 자동 확인 (사이트 전체 설정)</legend>
+        <p class="muted">학생들 화면을 포함한 모든 기기에 적용됩니다. 제출이 끝나면 꺼 두세요. 저장된 사진으로 전시는 그대로 유지됩니다. 적용에는 2~3분 걸리고, 이미 열려 있는 화면은 새로고침하면 바뀝니다.</p>
+        <p id="gsNow" class="muted"></p>
+        <div class="gs-row">
+          <label>자동 확인<select id="gsOn"><option value="true">켜기</option><option value="false">끄기</option></select></label>
+          <label>확인 간격<select id="gsSec"><option value="60">1분</option><option value="120">2분</option><option value="300">5분</option><option value="600">10분</option><option value="1800">30분</option></select></label>
+        </div>
+        <div class="btns"><button id="gsApply" class="ghost">모든 기기에 적용</button></div>
+        <p id="gsMsg" class="upd-msg"></p>
+      </fieldset>
+      <fieldset>
+        <legend>작품 사진 업데이트</legend>
+        <p class="muted">새로 제출된 사진을 작게 줄여 사이트에 저장합니다. GitHub이 대신 작업한 뒤 사이트가 자동으로 다시 배포되며, 보통 3~5분 걸립니다.</p>
+        <div class="btns"><button id="updRun" class="ghost">지금 업데이트</button><button id="updStatus" class="ghost">최근 작업 상태</button></div>
+        <p id="updMsg" class="upd-msg"></p>
+      </fieldset>
+      <fieldset>
+        <legend>감상평 비속어 관리</legend>
+        <p class="muted">여기서 고친 목록은 모든 기기에 적용됩니다(2~3분). 여러 단어는 쉼표(,)로 구분해 주세요. 띄어쓰기는 무시되고, "시 1 발"처럼 사이에 숫자·기호를 넣은 것도 함께 걸러집니다.</p>
+        <p id="bwNow" class="muted"></p>
+        <label>추가할 비속어<input id="bwAdd" placeholder="예: 빡침, 꺼지셈"></label>
+        <label>정상 단어로 허용 (잘못 걸리는 말)<input id="bwAllow" placeholder="예: 시발택시, 개떡"></label>
+        <label>목록에서 지울 단어<input id="bwRemove" placeholder="위에서 추가했던 단어를 다시 지울 때"></label>
+        <div class="btns"><button id="bwApply" class="ghost">모든 기기에 적용</button></div>
+        <p id="bwMsg" class="upd-msg"></p>
+        <label>문장 검사해 보기<input id="bwTest" placeholder="문장을 입력하면 걸러지는지 바로 알려 줍니다"></label>
+        <p id="bwTestMsg" class="upd-msg"></p>
+      </fieldset>
+      <fieldset>
+        <legend>인터넷이 막혀 있을 때</legend>
+        <p class="muted">구글 시트에서 전체 선택(Ctrl+A) → 복사(Ctrl+C) 후 아래에 붙여넣으세요.</p>
+        <textarea id="pasteArea" rows="4" placeholder="여기에 붙여넣기"></textarea>
+        <div class="btns"><button id="pasteBtn" class="ghost">붙여넣은 내용으로 전시</button></div>
+      </fieldset>
+      <fieldset>
+        <legend>감상평</legend>
+        <label>Apps Script 웹 앱 주소 (선택)<input id="setHook" placeholder="https://script.google.com/macros/s/.../exec"></label>
+        <div class="btns"><button id="exportBtn" class="ghost">이 기기의 감상평 CSV 내려받기</button></div>
+      </fieldset>
+      <div class="btns end"><button id="saveData" class="primary">저장</button></div>
+    </div>
+  </div>
+
+  <script src="js/logo.js?v=20"></script>
+  <script src="js/config.js?v=20"></script>
+  <script src="js/art-local.js?v=20"></script>
+  <script src="js/badwords-custom.js?v=20"></script>
+  <script src="js/badwords.js?v=20"></script>
+  <script src="js/data.js?v=20"></script>
+  <script src="js/museums.js?v=20"></script>
+  <script src="js/music.js?v=20"></script>
+  <script src="js/post.js?v=20"></script>
+  <script src="js/textures.js?v=20"></script>
+  <script src="js/world.js?v=20"></script>
+  <script src="js/decor.js?v=20"></script>
+  <script src="js/architecture.js?v=20"></script>
+  <script src="js/setup.js?v=20"></script>
+  <script src="js/app.js?v=20"></script>
+</body>
+</html>

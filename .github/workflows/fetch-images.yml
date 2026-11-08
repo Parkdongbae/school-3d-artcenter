@@ -1,0 +1,37 @@
+# 작품 사진 업데이트
+#  - 데이터 관리(F9) 화면의 "작품 사진 업데이트" 버튼, 또는 GitHub Actions 화면에서 직접 실행
+#  - 구글 시트의 새 사진을 줄여 assets/art 에 저장하고, 바뀐 것이 있으면 커밋 → Vercel 자동 배포
+name: 작품 사진 업데이트
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fetch-images
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: 사진 줄여 내려받기
+        run: node tools/fetch-images.mjs
+      - name: 바뀐 사진 올리기
+        run: |
+          git add assets/art js/art-local.js
+          if git diff --cached --quiet; then
+            echo "새로 받은 사진이 없습니다."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "작품 사진 업데이트 ($(ls assets/art | wc -l | awk '{print $1/2}')장)"
+            git push
+          fi
