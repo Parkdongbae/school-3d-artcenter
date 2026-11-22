@@ -23,6 +23,9 @@ window.ART_CONFIG = {
   autoSync: true,
   autoSyncSeconds: 120,
 
+  // 주소로 여는 전시관(쉬운 방법) 허용. 학교 전용 사이트라면 false 로 (주소 뒤의 값으로 전시 내용이 바뀌지 않음)
+  allowLink: true,
+
   // 함께 관람하기: 같은 미술관에 있는 사람끼리 아바타로 보이고(multiplayer) 대화(chat)할 수 있습니다
   multiplayer: true,
   chat: true,

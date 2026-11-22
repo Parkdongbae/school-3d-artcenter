@@ -44,7 +44,8 @@
 
   const q = new URLSearchParams(location.search);
   const s = q.get('s') || '';
-  const linkMode = ID.test(s);
+  // allowLink: false 인 학교 전용 사이트에서는 주소의 값으로 전시를 바꿀 수 없음 (남의 시트를 우리 학교 주소로 보여 주는 일을 막음)
+  const linkMode = C.allowLink !== false && ID.test(s);
   if (linkMode) {
     C.linkMode = true;
     C.sheetId = s;
@@ -70,6 +71,7 @@
   C.noServer = linkMode || /\.github\.io$/.test(location.hostname) || location.protocol === 'file:';
   document.documentElement.classList.toggle('link-mode', linkMode);
   document.documentElement.classList.toggle('no-server', C.noServer);
+  document.documentElement.classList.toggle('no-link', C.allowLink === false);
 
   window.ArtLink = { build, driveId, logoUrl, HOOK, wantsMaker: q.has('make') };
 })();

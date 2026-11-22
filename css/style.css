@@ -321,7 +321,7 @@ fieldset { min-width: 0; } /* 긴 코드 줄 때문에 창 밖으로 넓어지�
 .manual-link .mo { margin-left: auto; white-space: nowrap; font-size: 13px; font-weight: 700; color: var(--accent); }
 
 /* ---------- 쉬운 방법: 전시관 주소 만들기 ---------- */
-.no-server .server-only, .link-mode .link-hide { display: none !important; }
+.no-server .server-only, .link-mode .link-hide, .no-link .link-only { display: none !important; }
 html:not(.no-server) .no-server-only { display: none; }
 .su-steps { margin: 6px 0 0 20px; display: grid; gap: 10px; line-height: 1.7; font-size: 14px; }
 .btnlike { display: inline-block; padding: 6px 14px; border-radius: 9px; font-weight: 700; color: #fff; text-decoration: none; }

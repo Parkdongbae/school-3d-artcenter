@@ -208,7 +208,7 @@
     if (location.protocol === 'file:') { box.innerHTML = '<div class="box warn small">파일로 직접 연 화면에서는 저장할 수 없습니다. Vercel에 배포된 사이트 주소에서 열어 주세요.</div>'; return; }
     try { S.info = await api({ action: 'info' }); }
     catch (e) { box.innerHTML = '<div class="box warn small">서버 기능을 찾지 못했습니다. Vercel에 배포된 사이트 주소에서 열어 주세요.</div>'; S.info = null; return; }
-    adv.hidden = false; if (!needsSetup()) adv.querySelector('details').open = true;
+    adv.hidden = false; if (!needsSetup() || C.allowLink === false) adv.querySelector('details').open = true;
     const i = S.info, need = [];
     if (!i.hasPassword) need.push('pw');
     if (!i.hasToken) need.push('token');

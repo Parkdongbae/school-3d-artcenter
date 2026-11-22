@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Noto+Serif+KR:wght@500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=26">
+  <link rel="stylesheet" href="css/style.css?v=27">
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 </head>
 <body>
@@ -149,7 +149,7 @@
     <div class="sheet setup-sheet">
       <button class="close" data-close aria-label="닫기">×</button>
       <h2>🏛 우리 학교 전시관 만들기</h2>
-      <p class="muted">가입도 설치도 필요 없습니다. 아래 순서대로 하면 <b>전시관 주소</b>가 만들어지고, 그 주소를 학생들에게 알려 주면 끝입니다.</p>
+      <p class="muted link-only">가입도 설치도 필요 없습니다. 아래 순서대로 하면 <b>전시관 주소</b>가 만들어지고, 그 주소를 학생들에게 알려 주면 끝입니다.</p>
       <fieldset>
         <legend>① 구글 설문지 준비 (처음 한 번)</legend>
         <ol class="su-steps">
@@ -178,16 +178,16 @@
           </div>
           <div><div class="muted small" style="margin:10px 0 6px">미리 보기 (미술관 현수막)</div><img id="suPoster" class="su-poster" alt="현수막 미리 보기"></div>
         </div>
-        <label class="check"><input type="checkbox" id="suMulti" checked> 여러 사람이 아바타로 함께 관람하기</label>
-        <label class="check"><input type="checkbox" id="suChat" checked> 관람하면서 대화(채팅)하기 허용 <span class="muted small">— 나쁜 말은 자동으로 가려지고, 대화는 저장되지 않습니다</span></label>
-        <details class="howto">
+        <label class="check link-only"><input type="checkbox" id="suMulti" checked> 여러 사람이 아바타로 함께 관람하기</label>
+        <label class="check link-only"><input type="checkbox" id="suChat" checked> 관람하면서 대화(채팅)하기 허용 <span class="muted small">— 나쁜 말은 자동으로 가려지고, 대화는 저장되지 않습니다</span></label>
+        <details class="howto link-only">
           <summary>더 꾸미기 (선택) — 학교 로고 · 감상평 모으기</summary>
           <label>학교 로고: 구글 드라이브에 올린 로고 그림의 공유 주소 (링크가 있는 모든 사용자 · 뷰어)<input id="suLogoUrl" placeholder="https://drive.google.com/file/d/……/view"></label>
           <p id="suLogoMsg" class="upd-msg"></p>
           <label>감상평을 구글 시트에 모으기: Apps Script 웹 앱 주소 (만드는 방법은 F9 → 감상평)<input id="suHook" placeholder="https://script.google.com/macros/s/……/exec"></label>
         </details>
       </fieldset>
-      <fieldset class="su-make">
+      <fieldset class="su-make link-only">
         <legend>④ 전시관 주소 만들기</legend>
         <div class="btns"><button id="suMake" class="primary big">🎉 전시관 주소 만들기</button></div>
         <p id="suMakeMsg" class="upd-msg"></p>
@@ -322,24 +322,24 @@ function t(v) {
     </div>
   </div>
 
-  <script src="js/logo.js?v=26"></script>
-  <script src="js/config.js?v=26"></script>
-  <script src="js/link.js?v=26"></script>
-  <script src="js/art-local.js?v=26"></script>
-  <script src="js/badwords-custom.js?v=26"></script>
-  <script src="js/badwords.js?v=26"></script>
-  <script src="js/data.js?v=26"></script>
-  <script src="js/museums.js?v=26"></script>
-  <script src="js/music.js?v=26"></script>
-  <script src="js/post.js?v=26"></script>
-  <script src="js/textures.js?v=26"></script>
-  <script src="js/world.js?v=26"></script>
-  <script src="js/decor.js?v=26"></script>
-  <script src="js/architecture.js?v=26"></script>
-  <script src="js/lobbyart.js?v=26"></script>
-  <script src="js/multi.js?v=26"></script>
-  <script src="js/auto.js?v=26"></script>
-  <script src="js/setup.js?v=26"></script>
-  <script src="js/app.js?v=26"></script>
+  <script src="js/logo.js?v=27"></script>
+  <script src="js/config.js?v=27"></script>
+  <script src="js/link.js?v=27"></script>
+  <script src="js/art-local.js?v=27"></script>
+  <script src="js/badwords-custom.js?v=27"></script>
+  <script src="js/badwords.js?v=27"></script>
+  <script src="js/data.js?v=27"></script>
+  <script src="js/museums.js?v=27"></script>
+  <script src="js/music.js?v=27"></script>
+  <script src="js/post.js?v=27"></script>
+  <script src="js/textures.js?v=27"></script>
+  <script src="js/world.js?v=27"></script>
+  <script src="js/decor.js?v=27"></script>
+  <script src="js/architecture.js?v=27"></script>
+  <script src="js/lobbyart.js?v=27"></script>
+  <script src="js/multi.js?v=27"></script>
+  <script src="js/auto.js?v=27"></script>
+  <script src="js/setup.js?v=27"></script>
+  <script src="js/app.js?v=27"></script>
 </body>
 </html>
