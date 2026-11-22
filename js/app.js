@@ -488,6 +488,9 @@
       this.renderBadWordsNow();
       $('#gsNow').innerHTML = `지금 사이트 설정: <b>${C.autoSync ? `켜짐 · ${secTxt(C.autoSyncSeconds || 120)}마다` : '꺼짐'}</b>`;
       $('#gsOn').value = C.autoSync ? 'true' : 'false';
+      { const mp = C.multiplayer !== false, ch = mp && C.chat !== false;
+        $('#tgNow').innerHTML = `지금 사이트 설정: 함께 관람 <b>${mp ? '켜짐' : '꺼짐'}</b> · 대화 <b>${ch ? '켜짐' : '꺼짐'}</b>`;
+        $('#tgMulti').value = mp ? 'true' : 'false'; $('#tgChat').value = ch ? 'true' : 'false'; $('#tgChat').disabled = !mp; }
       { const v = String(C.autoSyncSeconds || 120); if (![...$('#gsSec').options].some(o => o.value === v)) $('#gsSec').add(new Option(secTxt(+v), v)); $('#gsSec').value = v; }
       { const site = C.commentWebhookUrl || '', dev = LS.get('comment_webhook_url', '');
         $('#hookNow').innerHTML = site ? '지금 모든 기기 주소: <b>설정됨</b> (감상평이 시트로 모입니다)' + (dev && dev !== site ? ' · 이 기기는 다른 주소를 씁니다' : '') : '지금 모든 기기 주소: <b>없음</b>' + (dev ? ' · 이 기기에서만 시트로 보냅니다' : ' (감상평은 각 기기에만 저장)'); }
@@ -532,6 +535,8 @@
       $('#saveData').onclick = () => this.saveData(); $('#pasteBtn').onclick = () => this.pasteData();
       $('#exportBtn').onclick = () => this.exportComments(); $('#syncNow').onclick = () => { this.lastCsv = ''; this.sync(false).then(() => this.toast('구글 시트를 다시 확인했습니다.')); };
       $('#gsApply').onclick = () => this.applyGlobalSync();
+      $('#tgApply').onclick = () => this.applyTogether();
+      $('#tgMulti').onchange = () => { const on = $('#tgMulti').value === 'true'; $('#tgChat').disabled = !on; if (!on) $('#tgChat').value = 'false'; };
       $('#hookApply').onclick = () => this.applyHook();
       $('#gasCopy').onclick = async () => {
         const code = $('#gasCode').textContent;
@@ -630,6 +635,38 @@
           say('확인하는 중...'); const j = await call('status'); say(label(j.run), j.run && j.run.status !== 'completed' ? 'busy' : '');
         }
       } catch (e) { $('#updRun').disabled = false; say(e.message, 'err'); }
+    }
+    // 함께 관람 · 대화 켜기/끄기 (모든 기기)
+    async applyTogether() {
+      const msg = $('#tgMsg'), pass = $('#updPass').value.trim();
+      const say = (t, cls = '') => { msg.className = 'upd-msg ' + cls; msg.innerHTML = t; };
+      if (location.protocol === 'file:') { say('이 기능은 Vercel에 배포된 사이트 주소에서만 작동합니다.', 'err'); return; }
+      if (!pass) { say('맨 위 "관리자 비밀번호" 칸에 비밀번호를 입력해 주세요.', 'err'); return; }
+      const mp = $('#tgMulti').value === 'true', ch = mp && $('#tgChat').value === 'true';
+      const post = async payload => {
+        const r = await fetch('/api/update-images', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pass, ...payload }) });
+        if (r.status === 404) throw new Error('서버 기능을 찾을 수 없습니다. Vercel에 배포된 주소에서 사용해 주세요.');
+        const txt = await r.text(); let j = {}; try { j = JSON.parse(txt); } catch (e) { }
+        if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+        return j;
+      };
+      clearTimeout(this._tgTimer); $('#tgApply').disabled = true;
+      try {
+        say('설정 변경을 요청하는 중...');
+        const started = Date.now(); await post({ action: 'together', multiplayer: mp, chat: ch });
+        try { sessionStorage.setItem('upd_pass', pass); } catch (e) { }
+        const poll = async () => {
+          try {
+            const j = await post({ action: 'status', job: 'together' }), run = j.run;
+            const fresh = run && new Date(run.createdAt).getTime() > started - 60000;
+            if (!fresh || run.status !== 'completed') { say('GitHub이 설정을 고치는 중...', 'busy'); if (Date.now() - started < 10 * 60000) this._tgTimer = setTimeout(poll, 6000); else $('#tgApply').disabled = false; return; }
+            $('#tgApply').disabled = false;
+            if (run.conclusion === 'success') say(`설정을 저장했습니다: 함께 관람 <b>${mp ? '켜짐' : '꺼짐'}</b> · 대화 <b>${ch ? '켜짐' : '꺼짐'}</b>. 1~2분 뒤 배포가 끝나면 모든 기기에 적용됩니다(열려 있는 화면은 새로고침). <a href="${run.url}" target="_blank" rel="noopener">GitHub에서 보기</a>`, 'ok');
+            else say(`설정 변경이 실패했습니다. <a href="${run.url}" target="_blank" rel="noopener">GitHub에서 기록 보기</a>`, 'err');
+          } catch (e) { $('#tgApply').disabled = false; say(e.message, 'err'); }
+        };
+        this._tgTimer = setTimeout(poll, 5000);
+      } catch (e) { $('#tgApply').disabled = false; say(e.message, 'err'); }
     }
     async applyGlobalSync() {
       const msg = $('#gsMsg'), pass = $('#updPass').value.trim();

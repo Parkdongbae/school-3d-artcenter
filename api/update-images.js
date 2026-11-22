@@ -4,6 +4,7 @@
  *   - run    : GitHub Actions 의 "작품 사진 업데이트" 작업을 실행
  *   - status : 가장 최근 작업의 진행 상태 (job: 'images' | 'settings')
  *   - settings : 모든 기기 자동 확인 설정 변경 { autoSync: true|false, seconds }
+ *   - together : 함께 관람(아바타)·대화 켜기/끄기 { multiplayer: true|false, chat: true|false }
  *   - words    : 감상평 비속어 목록 고치기 { addWords, addAllow, remove } (쉼표 구분)
  *
  * Vercel 프로젝트 환경 변수 (Settings → Environment Variables)
@@ -13,7 +14,7 @@
  * ========================================================= */
 const crypto = require('crypto');
 
-const WORKFLOWS = { images: 'fetch-images.yml', settings: 'site-settings.yml', words: 'badwords.yml', config: 'site-config.yml' };
+const WORKFLOWS = { images: 'fetch-images.yml', settings: 'site-settings.yml', words: 'badwords.yml', config: 'site-config.yml', together: 'site-together.yml' };
 const env = k => String(process.env[k] || '').trim(); // 붙여넣을 때 섞인 공백·줄바꿈 제거
 
 // 접근 키 정리: GitHub 접근 키는 영문·숫자·밑줄(_)로만 이루어져 있으므로
@@ -144,6 +145,12 @@ module.exports = async (req, res) => {
       const inputs = { autosync: body.autoSync ? 'true' : 'false', seconds: String(sec) };
       const r = await dispatch(WORKFLOWS.settings, inputs);
       if (!r.ok) return fail(res, r, '설정 변경 작업을 시작하지 못했습니다');
+      return res.status(200).json({ ok: true, startedAt: new Date().toISOString(), inputs });
+    }
+    if (body.action === 'together') {
+      const mp = !!body.multiplayer, inputs = { multiplayer: mp ? 'true' : 'false', chat: mp && body.chat ? 'true' : 'false' }; // 함께 관람을 끄면 대화도 꺼짐
+      const r = await dispatch(WORKFLOWS.together, inputs);
+      if (!r.ok) return fail(res, r, '함께 관람 설정 작업을 시작하지 못했습니다');
       return res.status(200).json({ ok: true, startedAt: new Date().toISOString(), inputs });
     }
     if (body.action === 'config') {

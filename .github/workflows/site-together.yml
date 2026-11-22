@@ -1,0 +1,66 @@
+# 함께 관람 · 대화 켜기/끄기 (모든 기기에 적용)
+#  - 데이터 관리(F9) 화면의 "함께 관람 · 대화" → "모든 기기에 적용" 버튼으로 실행
+#  - js/config.js 의 multiplayer / chat 을 고쳐 커밋 → Vercel 자동 배포
+name: 함께 관람 설정
+
+on:
+  workflow_dispatch:
+    inputs:
+      multiplayer:
+        description: '함께 관람 - 아바타 (true / false)'
+        required: true
+        default: 'true'
+        type: choice
+        options: ['true', 'false']
+      chat:
+        description: '대화 - 채팅 (true / false)'
+        required: true
+        default: 'true'
+        type: choice
+        options: ['true', 'false']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: site-settings
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: 설정 바꾸기
+        env:
+          MULTI_IN: ${{ inputs.multiplayer }}
+          CHAT_IN: ${{ inputs.chat }}
+        run: |
+          [ "$MULTI_IN" = "true" ] && MP=true || MP=false
+          [ "$CHAT_IN" = "true" ] && CH=true || CH=false
+          # 값이 이미 있으면 고치고, 없으면(예전 설정 파일) commentWebhookUrl 줄 앞에 새로 넣음
+          set_key() {
+            if grep -qE "^\s*$1:\s*(true|false)," js/config.js; then
+              sed -i -E "s/^(\s*$1:\s*)(true|false),/\1$2,/" js/config.js
+            else
+              sed -i -E "s/^(\s*)commentWebhookUrl:/\1$1: $2,\n\1commentWebhookUrl:/" js/config.js
+            fi
+          }
+          set_key multiplayer "$MP"
+          set_key chat "$CH"
+          grep -nE "^\s*(multiplayer|chat):" js/config.js
+      - name: 올리기
+        env:
+          MULTI_IN: ${{ inputs.multiplayer }}
+          CHAT_IN: ${{ inputs.chat }}
+        run: |
+          git add js/config.js
+          if git diff --cached --quiet; then
+            echo "바뀐 설정이 없습니다."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "사이트 설정: 함께 관람 $MULTI_IN · 대화 $CHAT_IN"
+            git push
+          fi

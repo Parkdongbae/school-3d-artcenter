@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Noto+Serif+KR:wght@500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=27">
+  <link rel="stylesheet" href="css/style.css?v=28">
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 </head>
 <body>
@@ -245,6 +245,17 @@
         <p id="gsMsg" class="upd-msg"></p>
       </fieldset>
       <fieldset class="server-only">
+        <legend>함께 관람 · 대화 (사이트 전체 설정)</legend>
+        <p class="muted">학생들 화면을 포함한 모든 기기에 적용됩니다. <b>함께 관람</b>은 같은 미술관에 있는 사람끼리 아바타로 서로 보이는 기능이고, <b>대화</b>는 그 안에서 글로 이야기하는 기능입니다. 적용에는 2~3분 걸리고, 이미 열려 있는 화면은 새로고침하면 바뀝니다.</p>
+        <p id="tgNow" class="muted"></p>
+        <div class="gs-row">
+          <label>함께 관람 (아바타)<select id="tgMulti"><option value="true">켜기</option><option value="false">끄기</option></select></label>
+          <label>대화 (채팅)<select id="tgChat"><option value="true">켜기</option><option value="false">끄기</option></select></label>
+        </div>
+        <div class="btns"><button id="tgApply" class="ghost">모든 기기에 적용</button></div>
+        <p id="tgMsg" class="upd-msg"></p>
+      </fieldset>
+      <fieldset class="server-only">
         <legend>작품 사진 업데이트</legend>
         <p class="muted">새로 제출된 사진을 작게 줄여 사이트에 저장합니다. GitHub이 대신 작업한 뒤 사이트가 자동으로 다시 배포되며, 보통 3~5분 걸립니다.</p>
         <div class="btns"><button id="updRun" class="ghost">지금 업데이트</button><button id="updStatus" class="ghost">최근 작업 상태</button></div>
@@ -322,24 +333,24 @@ function t(v) {
     </div>
   </div>
 
-  <script src="js/logo.js?v=27"></script>
-  <script src="js/config.js?v=27"></script>
-  <script src="js/link.js?v=27"></script>
-  <script src="js/art-local.js?v=27"></script>
-  <script src="js/badwords-custom.js?v=27"></script>
-  <script src="js/badwords.js?v=27"></script>
-  <script src="js/data.js?v=27"></script>
-  <script src="js/museums.js?v=27"></script>
-  <script src="js/music.js?v=27"></script>
-  <script src="js/post.js?v=27"></script>
-  <script src="js/textures.js?v=27"></script>
-  <script src="js/world.js?v=27"></script>
-  <script src="js/decor.js?v=27"></script>
-  <script src="js/architecture.js?v=27"></script>
-  <script src="js/lobbyart.js?v=27"></script>
-  <script src="js/multi.js?v=27"></script>
-  <script src="js/auto.js?v=27"></script>
-  <script src="js/setup.js?v=27"></script>
-  <script src="js/app.js?v=27"></script>
+  <script src="js/logo.js?v=28"></script>
+  <script src="js/config.js?v=28"></script>
+  <script src="js/link.js?v=28"></script>
+  <script src="js/art-local.js?v=28"></script>
+  <script src="js/badwords-custom.js?v=28"></script>
+  <script src="js/badwords.js?v=28"></script>
+  <script src="js/data.js?v=28"></script>
+  <script src="js/museums.js?v=28"></script>
+  <script src="js/music.js?v=28"></script>
+  <script src="js/post.js?v=28"></script>
+  <script src="js/textures.js?v=28"></script>
+  <script src="js/world.js?v=28"></script>
+  <script src="js/decor.js?v=28"></script>
+  <script src="js/architecture.js?v=28"></script>
+  <script src="js/lobbyart.js?v=28"></script>
+  <script src="js/multi.js?v=28"></script>
+  <script src="js/auto.js?v=28"></script>
+  <script src="js/setup.js?v=28"></script>
+  <script src="js/app.js?v=28"></script>
 </body>
 </html>
