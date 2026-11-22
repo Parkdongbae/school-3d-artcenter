@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Noto+Serif+KR:wght@500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=23">
+  <link rel="stylesheet" href="css/style.css?v=25">
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 </head>
 <body>
@@ -56,12 +56,20 @@
     <div class="hud-right">
       <label class="select-wrap" title="전시실로 이동"><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><select id="roomSelect"></select><span>전시실 이동</span></label>
       <button id="listBtn" class="pill" title="작품 목록·검색"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg><span>작품 목록</span></button>
+      <button id="autoBtn" class="pill" title="자동 관람 — 작품을 무작위로 골라 차례로 보여 줍니다"><svg class="play" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg><svg class="halt" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg><span>자동 관람</span></button>
+      <button id="peopleBtn" class="pill mp-only" title="함께 관람 — 이름·아바타 바꾸기">👥 <span id="peopleN">1</span><span>명</span></button>
       <button id="muteBtn" class="icon-btn" title="배경음악 끄기 (M)"><svg class="on" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12"/></svg><svg class="off" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg></button>
       <button id="infoBtn" class="icon-btn" title="미술관 소개·조작법·화질"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg></button>
       <button id="dataBtn" class="icon-btn admin-only" title="데이터 관리 (F9)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></button>
     </div>
     <canvas id="minimap" title="미니맵 — 누르면 해당 전시실로 이동"></canvas>
     <button id="enterBtn">미술관 안으로 들어가기 <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    <div id="autoBar"><span class="auto-dot"></span><span id="autoText"></span><button id="autoStop" type="button">멈추기</button></div>
+    <div id="chat" class="chat-only">
+      <div id="chatLog" aria-live="polite"></div>
+      <div id="chatStatus" class="chat-status" hidden></div>
+      <form id="chatForm" autocomplete="off"><input id="chatInput" maxlength="80" placeholder="대화하기 (Enter)" aria-label="대화 입력"><button type="submit">보내기</button></form>
+    </div>
     <div id="joy"><div id="joyKnob"></div></div>
     <div id="crosshair"></div>
   </div>
@@ -118,6 +126,24 @@
     <div class="sheet info-sheet"><button class="close" data-close aria-label="닫기">×</button><div id="infoBody"></div></div>
   </div>
 
+  <!-- ============ 함께 관람: 이름·아바타 고르기 ============ -->
+  <div id="avatarModal" class="modal">
+    <div class="sheet avatar-sheet">
+      <button class="close" data-close aria-label="닫기">×</button>
+      <h2>👥 함께 관람하기</h2>
+      <p class="muted">이름과 아바타를 고르면, 같은 미술관에 있는 친구들과 서로 보이고 <span class="chat-only-inline">대화도 할 수 있어요.</span></p>
+      <fieldset>
+        <legend>내 이름과 아바타</legend>
+        <label>이름 (10자까지)<input id="avName" maxlength="10" placeholder="예: 3반 홍길동" autocomplete="off"></label>
+        <div id="avGrid" class="av-grid"></div>
+        <p id="avMsg" class="upd-msg"></p>
+        <div class="btns"><button id="avOk" class="primary">이 모습으로 관람하기</button><button id="avSolo" class="ghost">혼자 관람하기</button></div>
+      </fieldset>
+      <p id="avWho" class="muted small"></p>
+      <p class="muted small">· 대화는 고운 말로 해요. 나쁜 말은 자동으로 가려지고, 대화 내용은 저장되지 않습니다.<br>· 전화번호·주소 같은 개인 정보는 적지 마세요.</p>
+    </div>
+  </div>
+
   <!-- ============ 사이트 설정 (우리 학교 전시관 만들기) ============ -->
   <div id="setupModal" class="modal">
     <div class="sheet setup-sheet">
@@ -152,6 +178,8 @@
           </div>
           <div><div class="muted small" style="margin:10px 0 6px">미리 보기 (미술관 현수막)</div><img id="suPoster" class="su-poster" alt="현수막 미리 보기"></div>
         </div>
+        <label class="check"><input type="checkbox" id="suMulti" checked> 여러 사람이 아바타로 함께 관람하기</label>
+        <label class="check"><input type="checkbox" id="suChat" checked> 관람하면서 대화(채팅)하기 허용 <span class="muted small">— 나쁜 말은 자동으로 가려지고, 대화는 저장되지 않습니다</span></label>
         <details class="howto">
           <summary>더 꾸미기 (선택) — 학교 로고 · 감상평 모으기</summary>
           <label>학교 로고: 구글 드라이브에 올린 로고 그림의 공유 주소 (링크가 있는 모든 사용자 · 뷰어)<input id="suLogoUrl" placeholder="https://drive.google.com/file/d/……/view"></label>
@@ -294,21 +322,23 @@ function t(v) {
     </div>
   </div>
 
-  <script src="js/logo.js?v=23"></script>
-  <script src="js/config.js?v=23"></script>
-  <script src="js/link.js?v=23"></script>
-  <script src="js/art-local.js?v=23"></script>
-  <script src="js/badwords-custom.js?v=23"></script>
-  <script src="js/badwords.js?v=23"></script>
-  <script src="js/data.js?v=23"></script>
-  <script src="js/museums.js?v=23"></script>
-  <script src="js/music.js?v=23"></script>
-  <script src="js/post.js?v=23"></script>
-  <script src="js/textures.js?v=23"></script>
-  <script src="js/world.js?v=23"></script>
-  <script src="js/decor.js?v=23"></script>
-  <script src="js/architecture.js?v=23"></script>
-  <script src="js/setup.js?v=23"></script>
-  <script src="js/app.js?v=23"></script>
+  <script src="js/logo.js?v=25"></script>
+  <script src="js/config.js?v=25"></script>
+  <script src="js/link.js?v=25"></script>
+  <script src="js/art-local.js?v=25"></script>
+  <script src="js/badwords-custom.js?v=25"></script>
+  <script src="js/badwords.js?v=25"></script>
+  <script src="js/data.js?v=25"></script>
+  <script src="js/museums.js?v=25"></script>
+  <script src="js/music.js?v=25"></script>
+  <script src="js/post.js?v=25"></script>
+  <script src="js/textures.js?v=25"></script>
+  <script src="js/world.js?v=25"></script>
+  <script src="js/decor.js?v=25"></script>
+  <script src="js/architecture.js?v=25"></script>
+  <script src="js/multi.js?v=25"></script>
+  <script src="js/auto.js?v=25"></script>
+  <script src="js/setup.js?v=25"></script>
+  <script src="js/app.js?v=25"></script>
 </body>
 </html>

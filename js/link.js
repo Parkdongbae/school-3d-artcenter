@@ -8,6 +8,7 @@
  *   sub 부제                     n   학교 이름        p  전시 기간
  *   g   학교 로고 (구글 드라이브 파일 ID)
  *   h   감상평을 모을 Apps Script 웹 앱 주소
+ *   m=0 함께 관람(아바타) 끄기   c=0 대화(채팅)만 끄기
  * ========================================================= */
 (function () {
   const C = window.ART_CONFIG;
@@ -37,6 +38,7 @@
     if (o.period) q.set('p', o.period);
     if (o.logoId) q.set('g', o.logoId);
     if (o.hook) q.set('h', o.hook);
+    if (o.multi === false) q.set('m', '0'); else if (o.chat === false) q.set('c', '0');
     return location.origin + location.pathname + '?' + q.toString();
   }
 
@@ -59,6 +61,8 @@
     const h = String(q.get('h') || '').trim();
     C.commentWebhookUrl = HOOK.test(h) ? h : '';
     C.autoSync = true;
+    C.multiplayer = q.get('m') !== '0';
+    C.chat = C.multiplayer && q.get('c') !== '0';
     // 한 사이트를 여러 학교가 함께 쓰므로, 좋아요·감상평 등은 학교(시트)별로 따로 저장
     C.storeKey = s.slice(0, 16);
   }

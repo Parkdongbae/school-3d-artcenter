@@ -23,6 +23,10 @@ window.ART_CONFIG = {
   autoSync: true,
   autoSyncSeconds: 120,
 
+  // 함께 관람하기: 같은 미술관에 있는 사람끼리 아바타로 보이고(multiplayer) 대화(chat)할 수 있습니다
+  multiplayer: true,
+  chat: true,
+
   // 감상평을 구글 시트로 보낼 Apps Script 웹 앱 주소 (선택)
   commentWebhookUrl: ''
 };

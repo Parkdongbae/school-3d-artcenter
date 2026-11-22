@@ -184,13 +184,14 @@
       this.fillRoomSelect(); this.drawMinimapBase();
       history.replaceState(null, '', '#' + museum.id);
       setTimeout(() => ld.classList.remove('show'), 250);
+      Multi.enter(); AutoTour.enter();
       if (!keepPose) setTimeout(() => this.toast(this.isMobile ? '왼쪽 조이스틱으로 걷고, 화면을 끌어 둘러보세요.' : 'W A S D 로 걷고, 마우스를 끌어 둘러보세요. 작품을 누르면 크게 볼 수 있어요.', null, 6000), 900);
     }
     rebuild() { if (!this.museum) return; const pose = { p: this.player.pos.clone(), y: this.player.yaw, pi: this.player.pitch }; this.enter(this.museum, true).then(() => { this.player.pos.copy(pose.p); this.player.yaw = pose.y; this.player.pitch = pose.pi; }); }
     leave() {
-      this.music.setTarget(0);
+      this.music.setTarget(0); Multi.leave(); AutoTour.stop(true);
       if (this.world) { this.world.dispose(); this.world = null; }
-      this.museum = null; history.replaceState(null, '', location.pathname);
+      this.museum = null; history.replaceState(null, '', location.pathname + location.search);
       $('#landing').classList.remove('hide'); document.body.classList.remove('in-museum');
       this.renderLanding(); this.closeAll();
     }
@@ -336,11 +337,11 @@
       w.setInside(this.inside);
       const inLobby = P.pos.z < 0.3 && P.pos.z > -L.LD && inX;
       this.music.setTarget(this.inside * (inLobby ? 1 : 0.35));
-      w.update(dt, P.pos);
+      w.update(dt, P.pos); Multi.update(dt); AutoTour.update(dt);
       if (this.post) this.post.render(w.scene, this.camera, this.clock.elapsedTime); else this.renderer.render(w.scene, this.camera);
       // HUD
       const outside = P.pos.z > 2.5;
-      $('#enterBtn').classList.toggle('show', outside && !this.moveTarget && !this.glide);
+      $('#enterBtn').classList.toggle('show', outside && !this.moveTarget && !this.glide && !AutoTour.on);
       this.drawMinimap();
       this.updateRoomLabel();
     }
@@ -389,6 +390,7 @@
       g.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#e6b85c';
       g.beginPath(); g.moveTo(0, -7); g.lineTo(5, 5); g.lineTo(0, 2.5); g.lineTo(-5, 5); g.closePath(); g.fill();
       g.strokeStyle = '#fff'; g.lineWidth = 1.2; g.stroke(); g.restore();
+      Multi.drawMap(g, x => this.mapTx(x), z => this.mapTz(z));
     }
 
     /* ---------- 작품 상세 ---------- */
@@ -534,7 +536,7 @@
       $('#bwApply').onclick = () => this.applyBadWords();
       $('#openSetup').onclick = () => { this.closeModal('dataModal'); Setup.open(); };
       $('#setupStart').onclick = () => Setup.open();
-      Setup.init();
+      Setup.init(); Multi.init(this); AutoTour.init(this);
       if (window.ArtLink.wantsMaker) setTimeout(() => Setup.open(), 300);
       $('#bwTest').oninput = e => {
         const t = e.target.value.trim(), m = $('#bwTestMsg');

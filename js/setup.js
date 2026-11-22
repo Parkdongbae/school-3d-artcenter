@@ -28,7 +28,7 @@
     return {
       sheetUrl: $('#suSheet').value.trim(), line1: $('#suLine1').value.trim(), line2: $('#suLine2').value.trim(),
       subtitle: $('#suSub').value.trim(), school: $('#suSchool').value.trim(), period: $('#suPeriod').value.trim(),
-      logoUrl: $('#suLogoUrl').value.trim(), hook: $('#suHook').value.trim(),
+      logoUrl: $('#suLogoUrl').value.trim(), hook: $('#suHook').value.trim(), multi: $('#suMulti').checked, chat: $('#suChat').checked,
       logo: S.logoChanged ? S.logo : undefined
     };
   }
@@ -45,6 +45,7 @@
     $('#suPeriod').value = d.period ?? C.exhibitionPeriod ?? '';
     $('#suLogoUrl').value = d.logoUrl ?? (C.logoId ? `https://drive.google.com/file/d/${C.logoId}/view` : '');
     $('#suHook').value = d.hook ?? C.commentWebhookUrl ?? '';
+    $('#suMulti').checked = d.multi ?? (C.multiplayer !== false); $('#suChat').checked = d.chat ?? (C.chat !== false); $('#suChat').disabled = !$('#suMulti').checked;
     $('#suResult').hidden = true; $('#suMakeMsg').textContent = ''; $('#suPhotoMsg').textContent = ''; $('#suLogoMsg').textContent = '';
     S.linkLogo = null; checkLogoUrl();
     try { $('#suPass').value = sessionStorage.getItem('upd_pass') || ''; } catch (e) { }
@@ -176,7 +177,7 @@
     const logoId = d.logoUrl ? L.driveId(d.logoUrl) : '';
     if (d.logoUrl && !logoId) { say('학교 로고 주소가 구글 드라이브 주소가 아닙니다. 지우거나 다시 붙여넣어 주세요.', 'err'); return; }
     if (d.hook && !L.HOOK.test(d.hook)) { say('감상평 웹 앱 주소는 https://script.google.com/…/exec 모양이어야 합니다. 지우거나 다시 붙여넣어 주세요.', 'err'); return; }
-    const url = L.build({ sheetId: p.id, sheetGid: p.gid, line1: d.line1, line2: d.line2, subtitle: d.subtitle, school: d.school, period: d.period, logoId, hook: d.hook });
+    const url = L.build({ sheetId: p.id, sheetGid: p.gid, line1: d.line1, line2: d.line2, subtitle: d.subtitle, school: d.school, period: d.period, logoId, hook: d.hook, multi: d.multi, chat: d.multi && d.chat });
     $('#suLink').value = url; $('#suOpen').href = url; $('#suResult').hidden = false;
     say(location.protocol === 'file:' ? '⚠ 지금은 내 컴퓨터의 파일로 연 화면이라, 이 주소는 다른 사람에게 열리지 않습니다. 인터넷 주소(https://…)로 연 화면에서 만들어 주세요.' : '🎉 전시관 주소가 만들어졌습니다! 아래 주소를 복사해 학생들에게 알려 주세요.', location.protocol === 'file:' ? 'err' : 'ok');
     drawQr(url);
@@ -291,6 +292,8 @@
     $('#suCheck').onclick = () => checkSheet();
     ['#suLogoUrl', '#suHook'].forEach(s => $(s).addEventListener('change', saveDraft));
     $('#suLogoUrl').addEventListener('change', checkLogoUrl);
+    $('#suMulti').onchange = () => { $('#suChat').disabled = !$('#suMulti').checked; saveDraft(); };
+    $('#suChat').onchange = saveDraft;
     $('#suMake').onclick = () => make();
     $('#suCopy').onclick = () => copyLink();
     $('#suQrSave').onclick = () => saveQr();
