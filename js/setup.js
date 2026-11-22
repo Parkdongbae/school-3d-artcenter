@@ -2,12 +2,13 @@
  * Setup: 사이트 설정 화면 (처음 설정 마법사 / F9 → 사이트 설정)
  *  - 구글 시트 주소를 통째로 붙여넣으면 ID·탭 번호를 찾아 연결을 확인
  *  - 전시 제목·학교·기간·로고를 입력하고 미리 보기
- *  - 저장하면 서버 기능 → GitHub 작업이 js/config.js 를 고쳐 다시 배포
+ *  - 쉬운 방법: "전시관 주소 만들기" → 주소(와 QR 코드)만 학생에게 알려 주면 끝 (js/link.js)
+ *  - 고급(Vercel로 직접 배포한 경우): 저장하면 서버 기능 → GitHub 작업이 js/config.js 를 고쳐 다시 배포
  * ========================================================= */
 (function () {
   const $ = s => document.querySelector(s);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const C = window.ART_CONFIG, D = window.ArtData, LS = D.LS;
+  const C = window.ART_CONFIG, D = window.ArtData, LS = D.LS, L = window.ArtLink;
   const DRAFT = 'setup_draft';
 
   const needsSetup = () => !C.sheetId || /여기에|SHEET_ID/i.test(C.sheetId);
@@ -21,26 +22,31 @@
     return { id, gid };
   }
 
-  const S = { logo: '', logoChanged: false, info: null, sheetOk: false };
+  const S = { logo: '', logoChanged: false, info: null, sheetOk: false, linkLogo: null };
 
   function draft() {
     return {
       sheetUrl: $('#suSheet').value.trim(), line1: $('#suLine1').value.trim(), line2: $('#suLine2').value.trim(),
       subtitle: $('#suSub').value.trim(), school: $('#suSchool').value.trim(), period: $('#suPeriod').value.trim(),
+      logoUrl: $('#suLogoUrl').value.trim(), hook: $('#suHook').value.trim(),
       logo: S.logoChanged ? S.logo : undefined
     };
   }
   function saveDraft() { try { const d = draft(); delete d.logo; localStorage.setItem(DRAFT, JSON.stringify(d)); } catch (e) { } }
 
   function fill() {
-    let d = {}; try { d = JSON.parse(localStorage.getItem(DRAFT) || '{}'); } catch (e) { }
+    let d = {}; if (!C.linkMode) try { d = JSON.parse(localStorage.getItem(DRAFT) || '{}'); } catch (e) { } // 주소로 연 전시관은 그 주소의 내용을 그대로 보여 줌
     const lines = C.exhibitionTitleLines || [C.exhibitionTitle];
     $('#suSheet').value = d.sheetUrl ?? (needsSetup() ? '' : `https://docs.google.com/spreadsheets/d/${C.sheetId}/edit#gid=${C.sheetGid || 0}`);
     $('#suLine1').value = d.line1 ?? lines[0] ?? '';
     $('#suLine2').value = d.line2 ?? lines[1] ?? '';
     $('#suSub').value = d.subtitle ?? C.exhibitionSubtitle ?? '';
-    $('#suSchool').value = d.school ?? C.schoolName ?? '';
+    $('#suSchool').value = d.school ?? (needsSetup() ? '' : C.schoolName) ?? '';
     $('#suPeriod').value = d.period ?? C.exhibitionPeriod ?? '';
+    $('#suLogoUrl').value = d.logoUrl ?? (C.logoId ? `https://drive.google.com/file/d/${C.logoId}/view` : '');
+    $('#suHook').value = d.hook ?? C.commentWebhookUrl ?? '';
+    $('#suResult').hidden = true; $('#suMakeMsg').textContent = ''; $('#suPhotoMsg').textContent = ''; $('#suLogoMsg').textContent = '';
+    S.linkLogo = null; checkLogoUrl();
     try { $('#suPass').value = sessionStorage.getItem('upd_pass') || ''; } catch (e) { }
     S.logo = ''; S.logoChanged = false; $('#suNoLogo').checked = !C.logo;
     $('#suLogoPrev').innerHTML = C.logo ? `<img src="${esc(C.logo)}" alt="">` : '<span>로고 없음</span>';
@@ -63,7 +69,8 @@
         $('#suPoster').src = t.image.toDataURL('image/png'); t.dispose();
         Object.assign(C, { exhibitionTitle: bak.t, exhibitionTitleLines: bak.l, exhibitionSubtitle: bak.s, schoolName: bak.n, exhibitionPeriod: bak.p }); window.LOGO_IMG = bak.img;
       };
-      if ($('#suNoLogo').checked) show(null);
+      if (S.linkLogo) show(S.linkLogo);
+      else if ($('#suNoLogo').checked) show(null);
       else if (S.logoChanged && S.logo) { const im = new Image(); im.onload = () => show(im); im.src = S.logo; }
       else show(bak.img);
     }, 150);
@@ -106,12 +113,82 @@
       const arts = st.reduce((a, s) => a + s.items.length, 0);
       m.className = 'upd-msg ok';
       m.innerHTML = st.length ? `✅ 연결되었습니다! 학생 <b>${st.length}명</b>, 작품 <b>${arts}점</b>을 읽었습니다.` : '✅ 연결되었습니다. 아직 응답이 없어요 (설문지에서 시험 제출을 해 보세요).';
-      S.sheetOk = true; saveDraft(); return p;
+      S.sheetOk = true; saveDraft(); checkPhoto(st); return p;
     } catch (e) {
       m.className = 'upd-msg err';
       m.innerHTML = '시트를 읽지 못했습니다. 시트 오른쪽 위 <b>공유 → 일반 액세스 → "링크가 있는 모든 사용자"(뷰어)</b>로 바꿨는지 확인해 주세요.';
       return null;
     }
+  }
+
+  // 사진 폴더 공유 확인: 첫 작품 사진이 실제로 보이는지 시험
+  function checkPhoto(students) {
+    const m = $('#suPhotoMsg'); m.className = 'upd-msg'; m.textContent = '';
+    const item = students.flatMap(s => s.items).find(i => /googleusercontent\.com\/d\//.test(i.img));
+    if (!item) { if (students.length) { m.className = 'upd-msg busy'; m.textContent = '아직 사진이 있는 응답이 없어, 사진 폴더 공유는 확인하지 못했습니다.'; } return; }
+    const im = new Image();
+    im.onload = () => { m.className = 'upd-msg ok'; m.textContent = '✅ 작품 사진도 잘 보입니다.'; };
+    im.onerror = () => { m.className = 'upd-msg err'; m.innerHTML = '⚠ 작품 사진이 보이지 않습니다. 구글 드라이브의 <b>"설문지 제목 (File responses)"</b> 폴더를 마우스 오른쪽 버튼 → <b>공유 → 링크가 있는 모든 사용자</b>(뷰어)로 바꾼 뒤 <b>연결 확인</b>을 다시 눌러 주세요.'; };
+    im.src = item.img + '=s64';
+  }
+
+  // 학교 로고 주소 확인 (구글 드라이브 공유 주소)
+  function checkLogoUrl() {
+    const m = $('#suLogoMsg'), v = $('#suLogoUrl').value.trim();
+    S.linkLogo = null;
+    if (!v) { m.textContent = ''; preview(); return; }
+    const id = L.driveId(v);
+    if (!id) { m.className = 'upd-msg err'; m.textContent = '구글 드라이브 주소를 찾지 못했습니다. 로고 그림을 드라이브에 올린 뒤 공유 → 링크 복사로 얻은 주소를 붙여넣어 주세요.'; preview(); return; }
+    const im = new Image(); im.crossOrigin = 'anonymous';
+    im.onload = () => { S.linkLogo = im; m.className = 'upd-msg ok'; m.textContent = '✅ 로고를 읽었습니다.'; preview(); };
+    im.onerror = () => { m.className = 'upd-msg err'; m.innerHTML = '로고 그림을 읽지 못했습니다. 드라이브에서 그 파일을 <b>공유 → 링크가 있는 모든 사용자</b>(뷰어)로 바꿔 주세요.'; preview(); };
+    im.src = L.logoUrl(id);
+  }
+
+  // QR 코드 (필요할 때만 불러옴)
+  let qrLib = null;
+  function loadQr() {
+    return qrLib || (qrLib = new Promise((res, rej) => {
+      const sc = document.createElement('script');
+      sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';
+      sc.onload = () => res(window.qrcode); sc.onerror = () => { qrLib = null; rej(new Error('QR')); };
+      document.head.appendChild(sc);
+    }));
+  }
+  async function drawQr(url) {
+    const cv = $('#suQr'), x = cv.getContext('2d');
+    try {
+      const qrcode = await loadQr(), qr = qrcode(0, 'L'); qr.addData(url); qr.make();
+      const n = qr.getModuleCount(), cell = Math.max(2, Math.floor(1000 / (n + 8))), size = cell * (n + 8);
+      cv.width = cv.height = size; x.fillStyle = '#fff'; x.fillRect(0, 0, size, size); x.fillStyle = '#000';
+      for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) x.fillRect((c + 4) * cell, (r + 4) * cell, cell, cell);
+      cv.hidden = false; $('#suQrSave').hidden = false;
+    } catch (e) { cv.hidden = true; $('#suQrSave').hidden = true; }
+  }
+
+  // ④ 전시관 주소 만들기 (쉬운 방법)
+  async function make() {
+    const msg = $('#suMakeMsg'), say = (t, c = '') => { msg.className = 'upd-msg ' + c; msg.innerHTML = t; };
+    $('#suResult').hidden = true;
+    const p = await checkSheet(); if (!p) { say('먼저 ② 구글 시트 주소를 확인해 주세요.', 'err'); $('#suSheet').focus(); return; }
+    const d = draft();
+    if (!d.line1) { say('③ 전시 제목(첫째 줄)을 적어 주세요.', 'err'); $('#suLine1').focus(); return; }
+    const logoId = d.logoUrl ? L.driveId(d.logoUrl) : '';
+    if (d.logoUrl && !logoId) { say('학교 로고 주소가 구글 드라이브 주소가 아닙니다. 지우거나 다시 붙여넣어 주세요.', 'err'); return; }
+    if (d.hook && !L.HOOK.test(d.hook)) { say('감상평 웹 앱 주소는 https://script.google.com/…/exec 모양이어야 합니다. 지우거나 다시 붙여넣어 주세요.', 'err'); return; }
+    const url = L.build({ sheetId: p.id, sheetGid: p.gid, line1: d.line1, line2: d.line2, subtitle: d.subtitle, school: d.school, period: d.period, logoId, hook: d.hook });
+    $('#suLink').value = url; $('#suOpen').href = url; $('#suResult').hidden = false;
+    say(location.protocol === 'file:' ? '⚠ 지금은 내 컴퓨터의 파일로 연 화면이라, 이 주소는 다른 사람에게 열리지 않습니다. 인터넷 주소(https://…)로 연 화면에서 만들어 주세요.' : '🎉 전시관 주소가 만들어졌습니다! 아래 주소를 복사해 학생들에게 알려 주세요.', location.protocol === 'file:' ? 'err' : 'ok');
+    drawQr(url);
+    $('#suResult').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  async function copyLink() {
+    const t = $('#suLink');
+    try { await navigator.clipboard.writeText(t.value); } catch (e) { t.select(); document.execCommand('copy'); }
+    app.toast('전시관 주소를 복사했습니다. 붙여넣기(Ctrl+V) 하세요.');
+  }
+  function saveQr() {
+    const a = document.createElement('a'); a.download = '전시관-QR코드.png'; a.href = $('#suQr').toDataURL('image/png'); a.click();
   }
 
   async function api(payload) {
@@ -124,10 +201,13 @@
 
   // 저장 준비 상태 (관리자 비밀번호·접근 키가 Vercel 에 들어 있는지)
   async function loadInfo() {
-    const box = $('#suReady');
+    const box = $('#suReady'), adv = $('#suAdvanced');
+    adv.hidden = true;
+    if (C.noServer) return; // 주소로 연 전시관·GitHub Pages: 쉬운 방법만
     if (location.protocol === 'file:') { box.innerHTML = '<div class="box warn small">파일로 직접 연 화면에서는 저장할 수 없습니다. Vercel에 배포된 사이트 주소에서 열어 주세요.</div>'; return; }
     try { S.info = await api({ action: 'info' }); }
     catch (e) { box.innerHTML = '<div class="box warn small">서버 기능을 찾지 못했습니다. Vercel에 배포된 사이트 주소에서 열어 주세요.</div>'; S.info = null; return; }
+    adv.hidden = false; if (!needsSetup()) adv.querySelector('details').open = true;
     const i = S.info, need = [];
     if (!i.hasPassword) need.push('pw');
     if (!i.hasToken) need.push('token');
@@ -209,6 +289,12 @@
     ['#suLine1', '#suLine2', '#suSub', '#suSchool', '#suPeriod'].forEach(s => $(s).addEventListener('input', () => { preview(); saveDraft(); }));
     $('#suSheet').addEventListener('change', () => { saveDraft(); checkSheet(); });
     $('#suCheck').onclick = () => checkSheet();
+    ['#suLogoUrl', '#suHook'].forEach(s => $(s).addEventListener('change', saveDraft));
+    $('#suLogoUrl').addEventListener('change', checkLogoUrl);
+    $('#suMake').onclick = () => make();
+    $('#suCopy').onclick = () => copyLink();
+    $('#suQrSave').onclick = () => saveQr();
+    $('#suLink').onclick = e => e.target.select();
     $('#suNoLogo').onchange = () => preview();
     $('#suLogo').onchange = async e => {
       const f = e.target.files[0]; if (!f) return;

@@ -38,7 +38,7 @@
       this.lastCsv = '';
       this.logoReady = new Promise(res => {
         if (!C.logo) return res();
-        const img = window.LOGO_IMG = new Image(); img.onload = img.onerror = () => res(); img.src = location.protocol === 'file:' ? (window.LOGO_DATA || C.logo) : C.logo; // 서버에서는 assets/logo.png 를 그대로 사용
+        const img = window.LOGO_IMG = new Image(); if (/^https?:/.test(C.logo)) img.crossOrigin = 'anonymous'; img.onload = img.onerror = () => res(); img.src = location.protocol === 'file:' ? (window.LOGO_DATA || C.logo) : C.logo; // 서버에서는 assets/logo.png 를 그대로 사용
         setTimeout(res, 2500);
       });
       document.title = C.exhibitionTitle + ' · 3D 전시관';
@@ -535,6 +535,7 @@
       $('#openSetup').onclick = () => { this.closeModal('dataModal'); Setup.open(); };
       $('#setupStart').onclick = () => Setup.open();
       Setup.init();
+      if (window.ArtLink.wantsMaker) setTimeout(() => Setup.open(), 300);
       $('#bwTest').oninput = e => {
         const t = e.target.value.trim(), m = $('#bwTestMsg');
         if (!t) { m.textContent = ''; m.className = 'upd-msg'; return; }

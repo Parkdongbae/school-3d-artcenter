@@ -3,9 +3,12 @@
  * ========================================================= */
 (function () {
   const C = window.ART_CONFIG;
+  // 주소로 연 전시관(쉬운 방법)은 한 사이트를 여러 학교가 함께 쓰므로 학교(시트)별로 따로 저장
+  const DEVICE_KEYS = { quality: 1, music_muted: 1 }; // 기기 설정은 함께 씀
+  const key = k => (C.storeKey && !DEVICE_KEYS[k] ? k + '@' + C.storeKey : k);
   const LS = {
-    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } },
-    set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* 저장 불가 환경 */ } }
+    get(k, d) { try { const v = localStorage.getItem(key(k)); return v == null ? d : v; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(key(k), v); } catch (e) { /* 저장 불가 환경 */ } }
   };
 
   function driveToImage(url) {
@@ -133,6 +136,7 @@
     LS, driveToImage, parseClass, parseDelimited, rowsToStudents, buildExhibition, fetchSheet,
     sampleStudents: () => JSON.parse(JSON.stringify(SAMPLE)),
     settings() {
+      if (C.linkMode) return { sheetId: C.sheetId, sheetGid: C.sheetGid, webhook: C.commentWebhookUrl || LS.get('comment_webhook_url', '') };
       return {
         sheetId: LS.get('sheet_id', C.sheetId), sheetGid: LS.get('sheet_gid', C.sheetGid),
         webhook: LS.get('comment_webhook_url', '') || C.commentWebhookUrl || ''
