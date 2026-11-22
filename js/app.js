@@ -54,7 +54,7 @@
     initRenderer() {
       const r = this.renderer = new THREE.WebGLRenderer({ antialias: this.quality === 'high', powerPreference: 'high-performance' });
       const dpr = window.devicePixelRatio || 1;
-      let pr = this.lowQuality ? Math.min(dpr, 1.25) : this.ultra ? Math.min(Math.max(dpr, 1.5), 2.5) : Math.min(dpr, 2);
+      let pr = this.lowQuality ? Math.min(dpr, 1.25) : this.ultra ? Math.min(Math.max(dpr, 1.5), 2.5) : Math.min(dpr, 1.5);
       if (this.ultra) { const max = 3840 * 2160; while (pr > 1 && innerWidth * innerHeight * pr * pr > max) pr -= 0.25; }
       r.setPixelRatio(pr);
       r.setSize(innerWidth, innerHeight);
@@ -63,7 +63,7 @@
       $('#stage').appendChild(r.domElement);
       this.camera = new THREE.PerspectiveCamera(this.isMobile ? 72 : 64, innerWidth / innerHeight, 0.05, 2000);
       this.camera.rotation.order = 'YXZ';
-      if (this.ultra) this.post = new Post(r);
+      if (!this.lowQuality) { try { this.post = new Post(r, this.ultra ? {} : { samples: 4, bloom: 0.42 }); } catch (e) { this.post = null; } }
       addEventListener('resize', () => { r.setSize(innerWidth, innerHeight); if (this.post) this.post.setSize(innerWidth, innerHeight); this.camera.aspect = innerWidth / innerHeight; this.camera.updateProjectionMatrix(); this.drawMinimapBase(); });
     }
 
@@ -297,8 +297,14 @@
     /* ---------- 루프 ---------- */
     loop() {
       requestAnimationFrame(() => this.loop());
-      const dt = Math.min(0.05, this.clock.getDelta());
+      const raw = this.clock.getDelta(), dt = Math.min(0.05, raw);
       const w = this.world; if (!w) return;
+      if (!this.lowQuality && !this.ultra && !this._perfDone && !document.hidden && raw < 1) { // '높음'에서 처음 몇 초 동안 속도를 재서, 느리면 효과를 줄임
+        this._pf = (this._pf || 0) + 1; this._pt = (this._pt || 0) + raw;
+        if (this._pf === 30) { this._pt = 0; } // 처음 30장은 준비 시간이라 버림
+        if (this._pf >= 150) { this._perfDone = true; if (this._pt / 120 > 1 / 24) { this.post = null; w.noInShadow = true; this.lightMode = true; console.info('느린 기기: 가벼운 그리기로 바꿨습니다.'); } }
+      }
+      if (this.lightMode) w.noInShadow = true;
       const P = this.player, k = this.keys;
       // 이동 입력
       let f = (k.KeyW || k.ArrowUp ? 1 : 0) - (k.KeyS || k.ArrowDown ? 1 : 0) - this.joy.y;
@@ -361,19 +367,19 @@
       const sc = Math.min(W / (x1 - x0), H / (z1 - z0));
       this.map = { x0, z0, z1, sc, ox: (W - (x1 - x0) * sc) / 2, oy: (H - (z1 - z0) * sc) / 2, dpr, W, H };
       const base = document.createElement('canvas'); base.width = cv.width; base.height = cv.height; const g = base.getContext('2d'); g.scale(dpr, dpr);
-      const tx = x => this.map.ox + (x - x0) * sc, tz = z => this.map.oy + (z1 - z) * sc;
+      const tx = x => this.map.ox + (x - x0) * sc, tz = z => this.map.oy + (z - z0) * sc; // 위쪽 = 미술관 안쪽(앞으로 가는 방향), 아래쪽 = 광장
       this.world.mapShapes.forEach(s => {
         g.fillStyle = s.color;
-        if (s.type === 'rect') { const X = tx(Math.min(s.x0, s.x1)), Y = tz(Math.max(s.z0, s.z1)), w = Math.abs(s.x1 - s.x0) * sc, h = Math.abs(s.z1 - s.z0) * sc; g.fillRect(X, Y, w, h); if (s.stroke) { g.strokeStyle = 'rgba(255,255,255,0.5)'; g.lineWidth = 1; g.strokeRect(X, Y, w, h); } }
+        if (s.type === 'rect') { const X = tx(Math.min(s.x0, s.x1)), Y = tz(Math.min(s.z0, s.z1)), w = Math.abs(s.x1 - s.x0) * sc, h = Math.abs(s.z1 - s.z0) * sc; g.fillRect(X, Y, w, h); if (s.stroke) { g.strokeStyle = 'rgba(255,255,255,0.5)'; g.lineWidth = 1; g.strokeRect(X, Y, w, h); } }
         else if (s.type === 'circle') { g.beginPath(); g.arc(tx(s.x), tz(s.z), s.r * sc, 0, 7); g.fill(); }
       });
       g.font = '600 10px "Noto Sans KR", sans-serif'; g.fillStyle = 'rgba(255,255,255,0.85)'; g.textAlign = 'center'; g.textBaseline = 'middle';
       this.world.L.rooms.forEach(R => { if (!R.rect) return; const cx = tx((R.rect.x0 + R.rect.x1) / 2), cy = tz((R.rect.z0 + R.rect.z1) / 2); g.fillText(R.room.label.replace('학년 ', '-').replace('반', ''), cx, cy); });
-      g.fillStyle = 'rgba(255,255,255,0.7)'; g.fillText('입구', tx(0), tz(0) + 8);
+      g.fillStyle = 'rgba(255,255,255,0.7)'; g.fillText('입구', tx(0), tz(0) - 8);
       this.mapBase = base; this.mapTx = tx; this.mapTz = tz;
       cv.onclick = e => {
         const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
-        const wx = x0 + (mx - this.map.ox) / sc, wz = z1 - (my - this.map.oy) / sc;
+        const wx = x0 + (mx - this.map.ox) / sc, wz = z0 + (my - this.map.oy) / sc;
         const R = this.world.L.rooms.find(R => R.rect && wx > R.rect.x0 && wx < R.rect.x1 && wz > R.rect.z0 && wz < R.rect.z1);
         const a = R ? this.world.anchors.find(a => a.room === R.room) : (wz > 0 ? this.world.anchors[0] : this.world.anchors[1]);
         if (a) this.teleport(a.pos, a.yaw);

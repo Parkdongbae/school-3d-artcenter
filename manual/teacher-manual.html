@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>선생님용 매뉴얼 — 학생 작품 3D 온라인 전시관</title>
+<!-- 이 파일을 크롬에서 열어 인쇄(Ctrl+P) → PDF로 저장하면 teacher-manual.pdf 가 됩니다. (docs/개발-작업지시서.md 참고) -->
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; color: #1c1c1e; font-size: 11.5pt; line-height: 1.65; background: #777; }
+  .page { width: 210mm; height: 297mm; padding: 17mm 17mm 15mm; background: #fff; position: relative; overflow: hidden; page-break-after: always; margin: 0 auto; }
+  @media screen { .page { margin: 10px auto; } }
+  .foot { position: absolute; left: 17mm; right: 17mm; bottom: 8mm; display: flex; justify-content: space-between; font-size: 8.5pt; color: #9a968e; border-top: 1px solid #e6e2da; padding-top: 2mm; }
+  h1 { font-size: 21pt; line-height: 1.3; margin-bottom: 3mm; letter-spacing: -0.3pt; }
+  h1 .no { display: inline-block; background: #c8643c; color: #fff; border-radius: 6px; padding: 0 9px; margin-right: 8px; font-size: 15pt; vertical-align: 3px; }
+  h2 { font-size: 13.5pt; margin: 6mm 0 2mm; color: #a04a26; }
+  p { margin: 1.5mm 0; }
+  .lead { font-size: 12.5pt; color: #4a4741; margin-bottom: 4mm; }
+  b, strong { font-weight: 700; }
+  .btn { display: inline-block; background: #1f883d; color: #fff; border-radius: 5px; padding: 0 7px; font-weight: 700; font-size: 10pt; white-space: nowrap; }
+  .btn.y { background: #e6b85c; color: #222; } .btn.k { background: #26262b; } .btn.o { background: #c8643c; } .btn.b { background: #1a73e8; }
+  kbd { display: inline-block; border: 1px solid #b9b5ad; border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; font-family: inherit; font-size: 9.5pt; background: #f6f4ef; }
+  ol.steps { list-style: none; counter-reset: s; margin: 2mm 0; }
+  ol.steps > li { counter-increment: s; position: relative; padding: 1.2mm 0 1.2mm 10mm; }
+  ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 1.6mm; width: 6.5mm; height: 6.5mm; border-radius: 50%; background: #26262b; color: #fff; font-weight: 700; font-size: 10pt; text-align: center; line-height: 6.5mm; }
+  ul { margin: 1mm 0 1mm 5mm; } ul li { margin: 0.6mm 0; }
+  .tip, .warn, .ok { border-radius: 8px; padding: 3mm 4mm; margin: 3mm 0; font-size: 10.5pt; }
+  .tip { background: #eef6ff; border: 1px solid #c3dcfa; } .warn { background: #fff4e5; border: 1px solid #f3cf9a; } .ok { background: #eaf7ee; border: 1px solid #b9e2c4; }
+  .shot { display: block; width: 100%; border: 1px solid #cfcbc3; border-radius: 8px; margin: 2.5mm 0 1mm; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+  .shot.s { width: 76%; margin-left: auto; margin-right: auto; } .shot.xs { width: 60%; margin-left: auto; margin-right: auto; }
+  .cap { font-size: 9pt; color: #7a766e; text-align: center; margin-bottom: 2mm; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; align-items: start; }
+  .two.wide { grid-template-columns: 1.15fr 0.85fr; }
+  table { width: 100%; border-collapse: collapse; margin: 2mm 0; font-size: 10.5pt; }
+  th, td { border: 1px solid #d9d5cc; padding: 2mm 2.6mm; text-align: left; vertical-align: top; }
+  th { background: #f4f1ea; white-space: nowrap; }
+  .chk { list-style: none; margin-left: 0; } .chk li { padding-left: 7mm; position: relative; margin: 1.4mm 0; }
+  .chk li::before { content: ""; position: absolute; left: 0; top: 1.3mm; width: 4mm; height: 4mm; border: 1.4px solid #555; border-radius: 3px; }
+  /* 표지 */
+  .cover { padding: 0; color: #fff; background: #14151a; }
+  .cover img.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .55; }
+  .cover .in { position: absolute; inset: 0; padding: 30mm 20mm; display: flex; flex-direction: column; background: linear-gradient(180deg, rgba(20,21,26,.2), rgba(20,21,26,.92) 72%); }
+  .cover .tag { letter-spacing: 4pt; font-size: 10pt; color: #e6b85c; }
+  .cover h1 { font-size: 38pt; margin-top: auto; line-height: 1.2; }
+  .cover .sub { font-size: 15pt; margin-top: 6mm; color: #e9e5dc; }
+  .cover .meta { margin-top: 14mm; font-size: 10.5pt; color: #b9b5ad; line-height: 1.8; }
+  .big3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; margin: 5mm 0; }
+  .big3 > div { border: 1.5px solid #e0dcd3; border-radius: 10px; padding: 5mm 4mm; text-align: center; }
+  .big3 .n { font-size: 26pt; font-weight: 800; color: #c8643c; line-height: 1; }
+  .big3 .t { font-weight: 700; margin: 2mm 0 1mm; font-size: 12pt; } .big3 .d { font-size: 9.5pt; color: #6b6760; }
+  /* 구글 화면을 흉내 낸 그림 */
+  .mock { border: 1px solid #cfcbc3; border-radius: 8px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.1); font-size: 9.5pt; overflow: hidden; margin: 2mm 0 1mm; }
+  .mock .bar { background: #f1f3f4; padding: 2mm 3mm; display: flex; align-items: center; gap: 2mm; border-bottom: 1px solid #dfe1e5; color: #444; }
+  .mock .bar .dot { width: 5mm; height: 5mm; border-radius: 50%; background: #7248b9; flex: none; } .mock .bar .dot.g { background: #188038; } .mock .bar .dot.b { background: #1a73e8; }
+  .mock .body { padding: 4mm; }
+  .mock .tabs { display: flex; gap: 6mm; justify-content: center; border-bottom: 1px solid #e0e0e0; padding: 2mm 0 0; }
+  .mock .tabs span { padding-bottom: 1.5mm; } .mock .tabs .on { color: #7248b9; border-bottom: 2.5px solid #7248b9; font-weight: 700; }
+  .mock .row { display: flex; justify-content: space-between; align-items: center; margin: 1.5mm 0; }
+  .mock .gbtn { border: 1px solid #dadce0; border-radius: 4px; padding: 0.6mm 3mm; color: #188038; font-weight: 700; background: #fff; }
+  .mock .pick { outline: 2.5px solid #e23b2e; outline-offset: 2px; border-radius: 4px; }
+  .mock .dlg { border: 1px solid #dadce0; border-radius: 8px; padding: 3.5mm; }
+  .mock .sel { border: 1px solid #dadce0; border-radius: 4px; padding: 0.8mm 2.5mm; display: inline-block; }
+  .mock .url { flex: 1; background: #fff; border-radius: 10mm; padding: 0.8mm 3mm; border: 1px solid #dfe1e5; font-size: 8.5pt; color: #333; white-space: nowrap; overflow: hidden; }
+  .mock .folder { display: inline-block; border: 1px solid #dadce0; border-radius: 8px; padding: 2mm 3.5mm; background: #f8fafd; }
+  .num { display: inline-block; width: 5mm; height: 5mm; border-radius: 50%; background: #e23b2e; color: #fff; font-size: 8.5pt; font-weight: 700; text-align: center; line-height: 5mm; margin-right: 1mm; }
+</style>
+</head>
+<body>
+
+<!-- 표지 -->
+<section class="page cover">
+  <img class="bg" src="img/09b-lobby.jpg" alt="">
+  <div class="in">
+    <div class="tag">TEACHER'S MANUAL</div>
+    <h1>학생 작품<br>3D 온라인 전시관</h1>
+    <div class="sub">선생님용 매뉴얼 — 가입·설치 없이 10분 만에 만들기</div>
+    <div class="meta">만들기 화면 · https://parkdongbae.github.io/school-3d-artcenter/?make<br>준비물 · 구글 계정 하나, 인터넷이 되는 컴퓨터 (크롬 권장)</div>
+  </div>
+</section>
+
+<!-- 한눈에 보기 -->
+<section class="page">
+  <h1>한눈에 보기</h1>
+  <p class="lead">구글 설문지로 학생 작품 사진을 모으면, 3D 미술관에 학급별로 자동으로 걸립니다. 선생님이 할 일은 세 가지뿐입니다.</p>
+  <div class="big3">
+    <div><div class="n">1</div><div class="t">설문지 준비</div><div class="d">사본 만들기 → 시트 연결 → 공유 (5분)</div></div>
+    <div><div class="n">2</div><div class="t">시트 주소 붙여넣기</div><div class="d">붙여넣고 "연결 확인" (1분)</div></div>
+    <div><div class="n">3</div><div class="t">전시관 주소 만들기</div><div class="d">전시 제목을 적고 버튼 한 번 (2분)</div></div>
+  </div>
+  <img class="shot xs" src="img/09b-lobby.jpg" alt="전시관 로비">
+  <div class="cap">완성된 전시관의 로비. 지역 대표 미술관 12곳의 건축을 닮은 전시관 중에서 골라 관람합니다.</div>
+  <h2>이런 것이 필요 없습니다</h2>
+  <ul><li>GitHub·Vercel 같은 사이트 가입, 프로그램 설치, 코딩, 비밀번호·접근 키</li></ul>
+  <h2>이 매뉴얼의 순서</h2>
+  <table>
+    <tr><th>3~6쪽</th><td>전시관 만들기 (1 → 2 → 3단계)</td><th>10쪽</th><td>자동 관람 · TV에 틀어 두기</td></tr>
+    <tr><th>7쪽</th><td>시험해 보고 학생에게 알리기</td><th>11쪽</th><td>작품 크게 보기 · 관리 메뉴(F9)</td></tr>
+    <tr><th>8~9쪽</th><td>관람하기 · 아바타로 함께 관람 · 대화</td><th>12~13쪽</th><td>전시 중·후 할 일 · 문제 해결 · 개인정보</td></tr>
+  </table>
+  <div class="foot"><span>학생 작품 3D 온라인 전시관 · 선생님용 매뉴얼</span><span>2</span></div>
+</section>
+
+<!-- 1단계 (1) -->
+<section class="page">
+  <h1><span class="no">1단계</span>구글 설문지 준비 ①</h1>
+  <p class="lead">먼저 구글에 로그인한 뒤, 만들기 화면(<b>…/school-3d-artcenter/?make</b>)을 엽니다.</p>
+  <img class="shot" src="img/02-make.jpg" alt="만들기 화면">
+  <div class="cap">만들기 화면. 필요한 버튼과 순서가 이 화면 안에 모두 들어 있습니다.</div>
+  <ol class="steps">
+    <li>초록색 <span class="btn">설문지 사본 만들기 (새 창)</span> 을 누르고, 나오는 화면에서 <span class="btn b">사본 만들기</span> 를 누릅니다.<br>→ 질문이 모두 들어 있는 설문지가 내 구글 드라이브에 생깁니다.</li>
+    <li>설문지 맨 위 <b>제목</b>만 우리 학교에 맞게 고칩니다. 예) <b>○○중학교 미술 작품 제출</b></li>
+  </ol>
+  <div class="warn"><b>질문의 순서와 개수는 바꾸지 마세요.</b> 전시관은 "학번 → 성명 → 작품1 제목 → 내용 → 이미지 → 작품2 …" 순서로 읽습니다. 순서가 바뀌면 작품이 엉뚱하게 걸립니다.</div>
+  <ol class="steps" style="counter-reset: s 2">
+    <li>설문지 위쪽 <b>응답</b> 탭 → <span class="btn">Sheets에 연결</span> → <b>만들기</b> 를 누릅니다.<br>→ 응답이 쌓이는 <b>구글 시트</b>가 새 탭으로 열립니다. <b>이 탭은 닫지 마세요.</b></li>
+  </ol>
+  <div class="mock">
+    <div class="bar"><span class="dot"></span><b>○○중학교 미술 작품 제출</b></div>
+    <div class="tabs"><span>질문</span><span class="on">응답</span><span>설정</span></div>
+    <div class="body"><div class="row"><b>응답 0개</b><span class="gbtn pick">▦ Sheets에 연결</span></div></div>
+  </div>
+  <div class="cap">(그림) 설문지의 응답 탭 — 빨간 테두리의 버튼을 누릅니다. 구글 화면은 조금씩 바뀔 수 있습니다.</div>
+  <div class="foot"><span>학생 작품 3D 온라인 전시관 · 선생님용 매뉴얼</span><span>3</span></div>
+</section>
+
+<!-- 1단계 (2) -->
+<section class="page">
+  <h1><span class="no">1단계</span>구글 설문지 준비 ② — 공유 두 곳</h1>
+  <p class="lead">전시관이 작품을 읽을 수 있도록 <b>시트</b>와 <b>사진 폴더</b> 두 곳을 "링크가 있는 모든 사용자"로 바꿉니다. 가장 많이 빠뜨리는 부분입니다.</p>
+  <div class="two">
+    <div>
+      <h2>ⓐ 구글 시트 공유</h2>
+      <ol class="steps">
+        <li>방금 열린 구글 시트 오른쪽 위 <span class="btn b">공유</span> 를 누릅니다.</li>
+        <li>"일반 액세스"의 <b>제한됨</b>을 눌러 <b>링크가 있는 모든 사용자</b>로 바꿉니다.</li>
+        <li>역할은 <b>뷰어</b> 그대로 두고 <b>완료</b>.</li>
+      </ol>
+      <div class="mock"><div class="bar"><span class="dot g"></span>"○○중학교 미술 작품 제출(응답)" 공유</div>
+        <div class="body"><div class="dlg"><b>일반 액세스</b><div class="row" style="margin-top:2mm"><span class="sel pick">링크가 있는 모든 사용자 ▾</span><span class="sel">뷰어 ▾</span></div><div class="row" style="justify-content:flex-end;margin-top:3mm"><span class="btn b">완료</span></div></div></div></div>
+      <div class="cap">(그림) 공유 창</div>
+    </div>
+    <div>
+      <h2>ⓑ 사진 폴더 공유</h2>
+      <ol class="steps">
+        <li><b>drive.google.com</b> 을 엽니다.</li>
+        <li><b>"설문지 제목 (File responses)"</b> 폴더를 찾아 마우스 <b>오른쪽 버튼</b> → <b>공유</b> → <b>공유</b>.</li>
+        <li>똑같이 <b>링크가 있는 모든 사용자 · 뷰어</b>로 바꾸고 <b>완료</b>.</li>
+      </ol>
+      <div class="mock"><div class="bar"><span class="dot b"></span>내 드라이브</div>
+        <div class="body"><span class="folder pick">📁 ○○중학교 미술 작품 제출 (File responses)</span><p style="margin-top:2mm;color:#666">오른쪽 버튼 → 공유 → 공유</p></div></div>
+      <div class="cap">(그림) 학생이 올린 사진이 들어가는 폴더</div>
+    </div>
+  </div>
+  <div class="tip">사진 폴더는 <b>학생이 사진을 처음 올릴 때</b> 만들어지기도 합니다. 폴더가 안 보이면 7쪽의 시험 제출을 먼저 한 번 한 뒤 다시 찾아보세요.</div>
+  <h2>ⓒ 설문지 설정 (권장)</h2>
+  <ul>
+    <li>설문지 <b>설정 → 응답 → 응답 수정 허용</b>을 켭니다. 학생이 나중에 작품을 고칠 수 있습니다.</li>
+    <li>파일 올리기 질문 때문에 학생은 <b>구글 계정으로 로그인</b>해야 제출할 수 있습니다. (구글 설문지의 규칙입니다)</li>
+  </ul>
+  <div class="ok"><b>여기까지 하면 준비 끝.</b> 한 번 해 두면 다음 전시 때는 설문지만 새로 복사해 같은 방법으로 쓰면 됩니다.</div>
+  <div class="foot"><span>학생 작품 3D 온라인 전시관 · 선생님용 매뉴얼</span><span>4</span></div>
+</section>
+
+<!-- 2단계 -->
+<section class="page">
+  <h1><span class="no">2단계</span>구글 시트 주소 붙여넣기</h1>
+  <ol class="steps">
+    <li>구글 시트 탭으로 가서, 맨 위 <b>주소창의 글자를 전부 복사</b>합니다. (주소창 클릭 → <kbd>Ctrl</kbd>+<kbd>C</kbd>)</li>
+  </ol>
+  <div class="mock"><div class="bar"><span class="dot g"></span><span class="url pick">https://docs.google.com/spreadsheets/d/1AbCdEf…………/edit?resourcekey#gid=0</span></div></div>
+  <div class="cap">(그림) 구글 시트의 주소창 — 처음부터 끝까지 모두 복사합니다.</div>
+  <ol class="steps" style="counter-reset: s 1">
+    <li>만들기 화면의 <b>② 구글 시트 주소 붙여넣기</b> 칸에 붙여넣고(<kbd>Ctrl</kbd>+<kbd>V</kbd>) <span class="btn k">연결 확인</span> 을 누릅니다.</li>
+    <li>초록색 <b>✅ 연결되었습니다</b> 가 나오면 성공입니다. 사진이 있으면 <b>✅ 작품 사진도 잘 보입니다</b> 도 함께 나옵니다.</li>
+  </ol>
+  <img class="shot" src="img/03-sheet.jpg" alt="연결 확인 결과">
+  <div class="cap">연결에 성공한 화면. 읽어 온 학생 수와 작품 수가 보입니다.</div>
+  <h2>빨간 글씨가 나오면</h2>
+  <table>
+    <tr><th>"시트를 읽지 못했습니다"</th><td>4쪽 ⓐ <b>시트 공유</b>를 다시 확인합니다.</td></tr>
+    <tr><th>"설문지 주소가 아니라…"</th><td>설문지가 아니라 <b>구글 시트</b> 탭의 주소를 복사해야 합니다.</td></tr>
+    <tr><th>"작품 사진이 보이지 않습니다"</th><td>4쪽 ⓑ <b>사진 폴더 공유</b>를 다시 확인합니다.</td></tr>
+    <tr><th>"아직 응답이 없어요"</th><td>정상입니다. 그대로 3단계로 넘어가도 됩니다.</td></tr>
+  </table>
+  <div class="foot"><span>학생 작품 3D 온라인 전시관 · 선생님용 매뉴얼</span><span>5</span></div>
+</section>
+
+<!-- 3단계 -->
+<section class="page">
+  <h1><span class="no">3단계</span>전시 이름 적고 주소 만들기</h1>
+  <ol class="steps">
+    <li><b>전시 제목 첫째 줄</b>(필수)·둘째 줄·<b>학교 이름</b>을 적습니다. 오른쪽 <b>현수막 미리 보기</b>가 바로 바뀝니다.</li>
+    <li>두 가지를 정합니다. (처음에는 둘 다 켜져 있습니다)
+      <ul><li><b>여러 사람이 아바타로 함께 관람하기</b> — 같은 미술관에 있는 사람끼리 서로 보입니다.</li>
+      <li><b>관람하면서 대화(채팅)하기 허용</b> — 수업 중 장난이 걱정되면 이것만 끕니다.</li></ul></li>
+  </ol>
+  <img class="shot xs" src="img/04-title.jpg" alt="전시 이름 적기">
+  <ol class="steps" style="counter-reset: s 2">
+    <li>노란색 <span class="btn y">🎉 전시관 주소 만들기</span> 를 누릅니다.</li>
+    <li><span class="btn o">주소 복사</span> 를 눌러 한글·메모장에 붙여넣어 보관하고, <b>QR 코드 그림 저장</b>도 눌러 둡니다.</li>
+  </ol>
+  <img class="shot xs" src="img/05-result.jpg" alt="전시관 주소와 QR 코드">
+  <div class="cap">만들어진 전시관 주소와 QR 코드. 이 주소가 곧 우리 학교 전시관입니다.</div>
+  <div class="tip">주소가 길어도 괜찮습니다. 복사·붙여넣기 하거나 QR 코드를 쓰면 됩니다. <b>제목을 바꾸고 싶으면</b> 이 화면에서 다시 적고 주소를 새로 만들어 알려 주면 됩니다.</div>
+  <div class="foot"><span>학생 작품 3D 온라인 전시관 · 선생님용 매뉴얼</span><span>6</span></div>
+</section>
+
+<!-- 알리기 -->
+<section class="page">
+  <h1>시험해 보고 학생에게 알리기</h1>
+  <h2>먼저 선생님이 시험 제출</h2>
+  <ol class="steps">
+    <li>설문지 오른쪽 위 <b>보내기</b>(또는 게시) → 🔗 링크를 복사합니다. 이것이 <b>작품 내는 곳</b>입니다.</li>
+    <li>그 링크로 들어가 학번 <b>3101</b>, 이름, 작품 제목, 그림 한 장으로 제출해 봅니다.</li>
+    <li>2분쯤 뒤 전시관 주소를 새로고침(<kbd>F5</kbd>)하면 시험 작품이 걸려 있습니다.</li>
+    <li>시험 작품은 구글 시트에서 <b>그 줄을 지우면</b> 전시관에서도 사라집니다.</li>
+  </ol>
+  <img class="shot xs" src="img/06-open.jpg" alt="전시관 첫 화면">
+  <div class="cap">전시관 주소로 연 첫 화면. 우리 학교 전시 제목과 전시실·작가·작품 수가 보입니다.</div>
+  <h2>학생에게 알려 줄 두 가지</h2>
+  <table>
+    <tr><th>① 설문지 링크</th><td>작품을 <b>내는</b> 곳</td></tr>
+    <tr><th>② 전시관 주소 (또는 QR)</th><td>작품을 <b>구경하는</b> 곳</td></tr>
+  </table>
+  <h2>학번 쓰는 법 (전시실이 정해집니다)</h2>
+  <table>
+    <tr><th>4자리</th><td><b>3305</b> → 3학년 3반 5번 → "3학년 3반" 전시실</td></tr>
+    <tr><th>5자리</th><td><b>31205</b> → 3학년 12반 5번 → "3학년 12반" 전시실</td></tr>
+    <tr><th>그 밖</th><td>"특별 전시실"에 걸립니다. (교사 작품, 동아리 작품 등에 쓸 수 있습니다)</td></tr>
+  </table>
+  <div class="tip">학생에게 나눠 줄 안내문은 저장소의 <b>docs/학생-제출-안내문.md</b> 에 있습니다. 대괄호 부분만 고쳐 쓰세요.</div>
+  <div class="foot"><span>학생 작품 3D 온라인 전시관 · 선생님용 매뉴얼</span><span>7</span></div>
+</section>
+
+<!-- 관람 -->
+<section class="page">
+  <h1>관람하기</h1>
+  <p class="lead">첫 화면에서 미술관을 하나 고르면 미술관 앞 광장에서 시작합니다. 열두 곳 모두 같은 작품이 걸려 있고, 건물 모습만 다릅니다.</p>
+  <img class="shot xs" src="img/07-museums.jpg" alt="미술관 고르기">
+  <div class="cap">미술관 고르기 — 서울·경기·인천·충북·전북·광주·대구·대전·경남·부산·강원·제주</div>
+  <div class="two wide">
+    <div>
+      <h2>움직이는 방법</h2>
+      <table>
+        <tr><th>컴퓨터</th><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 또는 방향키로 걷기 · 마우스를 끌어 둘러보기 · 바닥을 누르면 그곳으로 걸어감 · <kbd>Shift</kbd> 빨리 걷기</td></tr>
+        <tr><th>휴대폰·태블릿</th><td>왼쪽 아래 조이스틱으로 걷기 · 화면을 밀어 둘러보기</td></tr>
+      </table>
+      <h2>화면 위쪽 버튼</h2>
+      <table>
+        <tr><th>전시실 이동</th><td>우리 반 전시실로 바로 가기</td></tr>
+        <tr><th>작품 목록</th><td>이름·제목으로 찾아 그 작품 앞으로 가기</td></tr>
+        <tr><th>▶ 자동 관람</th><td>알아서 돌아다니며 감상 (10쪽)</td></tr>
+        <tr><th>👥 숫자</th><td>지금 함께 있는 사람 수 · 이름과 아바타 바꾸기</td></tr>
+        <tr><th>ⓘ</th><td>미술관 소개 · 조작법 · 화질 고르기</td></tr>
+      </table>
+    </div>
+    <div>
+      <img class="shot" src="img/08-outside.jpg" alt="미술관 앞">
+      <div class="cap">미술관 앞. <b>미술관 안으로 들어가기</b>를 누르면 입구까지 걸어갑니다.</div>
+      <div class="tip">오른쪽 아래 <b>미니 지도</b>는 위쪽이 미술관 안쪽입니다. 지도의 전시실을 누르면 그곳으로 갑니다.</div>
+    </div>
+  </div>
+  <div class="foot"><span>학생 작품 3D 온라인 전시관 · 선생님용 매뉴얼</span><span>8</span></div>
+</section>
+
+<!-- 함께 관람 -->
+<section class="page">
+  <h1>아바타로 함께 관람 · 대화</h1>
+  <p class="lead">미술관에 처음 들어가면 이름과 아바타를 고릅니다. 같은 전시의 <b>같은 미술관</b>에 있는 사람끼리 서로 보이고 이야기할 수 있습니다.</p>
+  <div class="two">
+    <div>
+      <img class="shot" src="img/09-avatar.jpg" alt="이름과 아바타 고르기">
+      <div class="cap">이름(10자까지)과 아바타 12가지 중 하나를 고릅니다.</div>
+    </div>
+    <div>
+      <ul>
+        <li><span class="btn o">이 모습으로 관람하기</span> — 다른 사람에게 내 아바타와 이름표가 보입니다.</li>
+        <li><span class="btn k">혼자 관람하기</span> — 연결하지 않고 혼자 봅니다.</li>
+        <li>나중에 바꾸려면 화면 위 <b>👥</b> 버튼을 누릅니다.</li>
+      </ul>
+      <div class="tip">수업 시간에는 "<b>모두 서울관으로 들어오세요</b>"처럼 미술관을 하나 정해 주면 다 같이 만날 수 있습니다.</div>
+    </div>
+  </div>
+  <img class="shot s" src="img/10-together.jpg" alt="함께 관람하며 대화">
+  <div class="cap">친구들의 아바타와 말풍선. 화면 왼쪽 아래 칸에 글을 쓰고 <b>보내기</b>(컴퓨터는 <kbd>Enter</kbd>)를 누릅니다.</div>
+  <h2>대화의 안전 장치</h2>
+  <ul>
+    <li>나쁜 말은 보낼 수 없고, 받은 쪽에서도 자동으로 가려집니다. 연달아 보내기(도배)도 막습니다.</li>
+    <li>대화는 <b>어디에도 저장되지 않습니다.</b> 화면을 닫으면 사라집니다.</li>
+    <li>전시관 주소를 아는 사람은 누구나 들어올 수 있습니다. 주소를 학교 밖에 공개할 때는 6쪽의 <b>대화하기 허용</b>을 끄고 주소를 만드세요.</li>
+  </ul>
+  <div class="foot"><span>학생 작품 3D 온라인 전시관 · 선생님용 매뉴얼</span><span>9</span></div>
+</section>
+
+<!-- 자동 관람 -->
+<section class="page">
+  <h1>자동 관람 · TV에 틀어 두기</h1>
+  <p class="lead">화면 위 <span class="btn k">▶ 자동 관람</span> 을 누르면, 미술관으로 걸어 들어가 작품을 무작위로 골라 하나씩 보여 줍니다.</p>
+  <img class="shot s" src="img/11-auto.jpg" alt="자동 관람">
+  <div class="cap">자동 관람 중. 위쪽 막대에 지금 보는 작품의 제목·이름·반이 나옵니다.</div>
+  <ul>
+    <li>한 작품을 약 7초 본 뒤 다음 작품으로 걸어갑니다. 다른 반 전시실로는 장면이 바뀌며 넘어갑니다.</li>
+    <li>키보드·마우스·조이스틱으로 <b>직접 움직이면 바로 꺼집니다.</b> <b>멈추기</b>를 눌러도 됩니다.</li>
+    <li>작품을 다 보면 처음부터 다시 돕니다.</li>
+  </ul>
+  <h2>복도 TV · 전자 칠판에 계속 틀어 두기</h2>
+  <p>전시관 주소 <b>맨 끝에</b> 아래 글자를 붙여서 열면, 열자마자 자동 관람을 시작합니다.</p>
+  <div class="ok" style="font-size:13pt;text-align:center"><b>&amp;auto=1#seoul</b></div>
+  <table>
+    <tr><th>seoul 자리에</th><td>gwacheon · incheon · cheongju · jeonbuk · gwangju · daegu · daejeon · gyeongnam · busan · san · jeju 를 쓰면 다른 미술관에서 시작합니다.</td></tr>
+    <tr><th>소리</th><td>배경음악은 화면을 한 번 누르면 켜집니다. 끄려면 🔊 버튼(또는 <kbd>M</kbd>).</td></tr>
+    <tr><th>화면이 꺼지지 않게</th><td>TV·컴퓨터의 절전(화면 보호기) 설정을 꺼 두세요.</td></tr>
+  </table>
+  <div class="tip">학부모 공개 수업·학교 축제에서는 전시관을 큰 화면에 자동 관람으로 띄우고, 옆에 QR 코드를 붙여 두면 좋습니다.</div>
+  <div class="foot"><span>학생 작품 3D 온라인 전시관 · 선생님용 매뉴얼</span><span>10</span></div>
+</section>
+
+<!-- 작품·F9 -->
+<section class="page">
+  <h1>작품 크게 보기 · 관리 메뉴</h1>
+  <div class="two">
+    <div>
+      <h2>작품을 누르면</h2>
+      <img class="shot" src="img/12-art.jpg" alt="작품 크게 보기">
+      <ul>
+        <li>작품이 크게 보이고 제목·설명이 나옵니다.</li>
+        <li><b>좋아요</b>와 <b>감상평</b>을 남길 수 있습니다. 감상평은 학번·이름을 적어야 하고, 나쁜 말은 걸러집니다.</li>
+        <li>감상평은 기본적으로 <b>쓴 기기에만</b> 남습니다. 한곳에 모으려면 오른쪽 방법을 씁니다.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>관리 메뉴 — 키보드 <kbd>F9</kbd></h2>
+      <img class="shot" src="img/13-f9.jpg" alt="F9 관리 메뉴">
+      <ul>
+        <li><b>전시관 만들기 · 고치기</b> — 만들기 화면을 다시 엽니다.</li>
+        <li><b>지금 다시 불러오기</b> — 새 작품을 바로 확인합니다.</li>
+        <li><b>감상평</b> — 구글 시트에 모으는 방법 안내, 이 기기의 감상평 내려받기.</li>
+        <li><b>인터넷이 막혀 있을 때</b> — 시트 내용을 붙여넣어 전시.</li>
+      </ul>
+    </div>
+  </div>
+  <h2>감상평을 구글 시트 한곳에 모으려면 (선택)</h2>
+  <ol class="steps">
+    <li><kbd>F9</kbd> → <b>감상평</b> → <b>웹 앱 주소 만드는 방법</b>을 펼쳐 순서대로 따라 합니다. (약 5분)</li>
+    <li>만들어진 주소(<b>https://script.google.com/…/exec</b>)를 복사합니다.</li>
+    <li>만들기 화면 ③의 <b>더 꾸미기</b>를 펼쳐 붙여넣고, <b>전시관 주소를 새로 만들어</b> 다시 알립니다.</li>
+  </ol>
+  <h2>학교 로고 넣기 (선택)</h2>
+  <p>로고 그림을 구글 드라이브에 올리고 "링크가 있는 모든 사용자"로 공유한 뒤, 그 주소를 만들기 화면 ③ <b>더 꾸미기</b>의 학교 로고 칸에 붙여넣고 주소를 새로 만듭니다.</p>
+  <div class="foot"><span>학생 작품 3D 온라인 전시관 · 선생님용 매뉴얼</span><span>11</span></div>
+</section>
+
+<!-- 운영·문제 해결 -->
+<section class="page">
+  <h1>전시 중 · 전시 후에 할 일</h1>
+  <table>
+    <tr><th>잘못 올라온 작품 내리기</th><td>구글 시트에서 그 학생의 <b>줄을 지웁니다.</b> (약 2분 뒤 반영)</td></tr>
+    <tr><th>제목·설명 고치기</th><td>구글 시트에서 그 칸을 직접 고칩니다.</td></tr>
+    <tr><th>학생이 작품을 바꾸고 싶다</th><td>제출 뒤 받은 <b>응답 수정</b> 링크로 다시 제출합니다. 같은 학번·이름은 마지막 제출만 걸립니다.</td></tr>
+    <tr><th>전시 제목 바꾸기 · 대화 끄기</th><td>만들기 화면에서 고친 뒤 <b>주소를 새로 만들어</b> 다시 알립니다.</td></tr>
+    <tr><th>제출 마감</th><td>설문지 <b>응답</b> 탭에서 <b>응답 받기</b>를 끕니다.</td></tr>
+    <tr><th>전시 끝내기</th><td>구글 시트와 사진 폴더의 공유를 <b>제한됨</b>으로 되돌립니다. 전시관에 작품이 더는 보이지 않습니다.</td></tr>
+  </table>
+  <h1 style="margin-top:8mm">문제가 생기면</h1>
+  <table>
+    <tr><th>예시 작품이 보인다</th><td>시트 공유가 "링크가 있는 모든 사용자"가 아니거나, 주소 뒤의 글자가 잘렸습니다. 주소를 <b>통째로</b> 복사했는지 확인하세요.</td></tr>
+    <tr><th>사진이 "작품 준비 중"</th><td>사진 폴더 공유(4쪽 ⓑ)를 확인합니다. 학생이 사진 없이 제목만 낸 경우에도 이렇게 보입니다.</td></tr>
+    <tr><th>새 작품이 안 보인다</th><td>약 2분 기다리거나 <kbd>F5</kbd>. 급하면 <kbd>F9</kbd> → <b>지금 다시 불러오기</b>.</td></tr>
+    <tr><th>다른 반 전시실에 걸렸다</th><td>학번이 틀렸습니다. 구글 시트에서 학번 칸을 고칩니다.</td></tr>
+    <tr><th>친구가 안 보인다</th><td>서로 <b>같은 미술관</b>에 들어갔는지 확인합니다. 화면 왼쪽 아래에 "연결하지 못했습니다"가 보이면 학교 인터넷이 연결을 막는 경우입니다. 관람은 그대로 할 수 있습니다.</td></tr>
+    <tr><th>화면이 느리다 · 끊긴다</th><td>ⓘ → <b>화질</b>을 <b>낮음</b>으로 바꿉니다. 오래된 컴퓨터는 자동으로 가볍게 바뀌기도 합니다.</td></tr>
+    <tr><th>학교에서 구글이 막혀 있다</th><td><kbd>F9</kbd> → <b>인터넷이 막혀 있을 때</b>: 집에서 구글 시트 전체를 복사해 와 붙여넣으면 전시할 수 있습니다. (사진은 구글에서 받아 오므로 구글 사진 주소가 막히면 보이지 않습니다)</td></tr>
+  </table>
+  <div class="foot"><span>학생 작품 3D 온라인 전시관 · 선생님용 매뉴얼</span><span>12</span></div>
+</section>
+
+<!-- 개인정보·체크리스트 -->
+<section class="page">
+  <h1>꼭 지킬 것 — 개인정보</h1>
+  <ul>
+    <li>전시관 주소를 아는 사람은 <b>학생 이름·학번·작품</b>을 볼 수 있습니다. 학교의 개인정보·초상권 동의 절차를 따르세요.</li>
+    <li>구글 시트 <b>전체</b>가 "링크가 있는 사용자"에게 보입니다. 전화번호 같은 다른 정보를 그 시트에 적지 마세요.</li>
+    <li>학생 얼굴이 나온 사진은 올리지 않도록 안내합니다.</li>
+    <li>함께 관람·대화는 주소를 아는 누구나 들어올 수 있습니다. 주소를 학교 밖에 공개할 때는 대화를 꺼 두기를 권합니다.</li>
+    <li>로비에 걸린 큰 그림들은 <b>전시관을 꾸미기 위해 새로 만든 그림</b>이며, 실제 작가의 작품이 아닙니다.</li>
+  </ul>
+  <h1 style="margin-top:9mm">한 장 체크리스트</h1>
+  <ul class="chk">
+    <li>구글에 로그인하고 만들기 화면을 열었다.</li>
+    <li>설문지 사본을 만들고 제목을 고쳤다. (질문 순서는 그대로)</li>
+    <li>응답 → Sheets에 연결 → 구글 시트를 만들었다.</li>
+    <li>구글 시트를 "링크가 있는 모든 사용자 · 뷰어"로 공유했다.</li>
+    <li>사진 폴더 (File responses)를 "링크가 있는 모든 사용자 · 뷰어"로 공유했다.</li>
+    <li>시트 주소를 붙여넣고 <b>✅ 연결되었습니다</b>를 확인했다.</li>
+    <li>전시 제목·학교 이름을 적고, 함께 관람·대화 여부를 정했다.</li>
+    <li>전시관 주소를 만들어 복사해 두고, QR 코드를 저장했다.</li>
+    <li>시험 제출을 해서 전시관에 걸리는 것을 확인하고, 시험 줄을 지웠다.</li>
+    <li>학생에게 설문지 링크와 전시관 주소를 알렸다.</li>
+    <li>(전시 후) 응답 받기를 끄고, 시트·폴더 공유를 "제한됨"으로 되돌렸다.</li>
+  </ul>
+  <div class="tip" style="margin-top:6mm">더 필요한 분께: 학생이 수백 명이거나 학교 전용 주소가 필요하면 저장소의 <b>docs/고급-설치-Vercel.md</b>(예전 매뉴얼: manual/teacher-manual-advanced.pdf)를 보세요.</div>
+  <div class="foot"><span>학생 작품 3D 온라인 전시관 · 선생님용 매뉴얼</span><span>13</span></div>
+</section>
+</body>
+</html>

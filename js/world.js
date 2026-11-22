@@ -8,6 +8,7 @@
   const SPINE_HW = 4;     // 복도 반폭
   const ROOM_D = 14;      // 전시실 깊이
   const ART_SLOT = 2.9, LABEL_SLOT = 1.6, CORNER = 0.9;
+  const IN_LIGHT_Y = 5.35, IN_SHADOW_R = 26; // 실내 그림자 빛의 높이 · 범위(반지름)
 
   class World {
     constructor(app, museum, exhibition) {
@@ -15,7 +16,7 @@
       this.scene = new THREE.Scene();
       this.colliders = []; this.clickables = []; this.updaters = []; this.doors = [];
       this.artSlots = []; this.anchors = []; this.mapShapes = []; this.textures = [];
-      this.loadQueue = []; this.loading = 0;
+      this.loadQueue = []; this.loading = 0; this.inMats = [];
       this.low = app.lowQuality; this.ultra = !!app.ultra;
       this.time = 0;
     }
@@ -30,6 +31,7 @@
       });
       mat.envMap = (o.zone === 'in' ? this.envIn : this.envOut) || null;
       mat.envMapIntensity = o.envI ?? (o.zone === 'in' ? 0.55 : 1);
+      if (o.zone === 'in') this.inMats.push(mat);
       return mat;
     }
     Basic(color, mult = 1, o = {}) {
@@ -170,19 +172,25 @@
         const ms = this.ultra ? 4096 : 2048; sun.shadow.mapSize.set(ms, ms); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.04;
       }
       this.scene.add(sun, sun.target); this.sun = sun;
-      this.inHemi = new THREE.HemisphereLight(I.light, I.floorTint, 0); this.scene.add(this.inHemi);
-      this.inDir = new THREE.DirectionalLight(I.light, 0); this.inDir.position.set(3, 10, 4); this.scene.add(this.inDir);
-      this.inAmb = new THREE.AmbientLight(I.light, 0); this.scene.add(this.inAmb);
+      const soft = new THREE.Color(I.light).lerp(new THREE.Color('#ffffff'), 0.5); // 조명 색은 살리되 누렇게 뜨지 않게
+      this.inHemi = new THREE.HemisphereLight(soft, new THREE.Color(I.floorTint).lerp(new THREE.Color('#9a9a9a'), 0.5), 0); this.scene.add(this.inHemi);
+      this.inDir = new THREE.DirectionalLight(soft, 0); this.inDir.position.set(0.7, IN_LIGHT_Y, 0.45); this.scene.add(this.inDir, this.inDir.target);
+      if (!this.low) { // 천장 바로 아래에서 비추므로 지붕·천장은 그림자에 들어가지 않음
+        const sh = this.inDir.shadow, c = sh.camera; c.left = -IN_SHADOW_R; c.right = IN_SHADOW_R; c.top = IN_SHADOW_R; c.bottom = -IN_SHADOW_R; c.near = 0.05; c.far = IN_LIGHT_Y + 1;
+        const ms = this.ultra ? 4096 : 2048; sh.mapSize.set(ms, ms); sh.bias = -0.0008; sh.normalBias = 0.03; sh.radius = this.ultra ? 5 : 3.5;
+      }
+      this.inAmb = new THREE.AmbientLight(soft, 0); this.scene.add(this.inAmb);
     }
     // 실내/실외 노출 전환 (f: 0=밖, 1=안)
     setInside(f) {
       const s = this.m.sky, I = this.m.interior, dark = !!I.dark;
       this.sun.intensity = s.sunI * (1 - f * 0.92);
       this.hemi.intensity = s.hemi * (1 - f * 0.8);
-      this.inHemi.intensity = f * (dark ? 0.45 : 0.62);
-      this.inDir.intensity = f * (dark ? 0.2 : 0.45);
-      this.inAmb.intensity = f * (dark ? 0.12 : 0.18);
-      this.renderer.toneMappingExposure = 1.0 - f * (dark ? 0.0 : 0.16);
+      this.inHemi.intensity = f * (dark ? 0.42 : 0.6);
+      this.inDir.intensity = f * (dark ? 0.55 : 1.0);
+      this.inAmb.intensity = f * (dark ? 0.1 : 0.2);
+      this.renderer.toneMappingExposure = 1.0 - f * (dark ? 0.0 : 0.1);
+      if (!this.low) { this.inDir.castShadow = f > 0.04 && !this.noInShadow; this.sun.castShadow = f < 0.985; }
       const fogFar = (s.fogD || 260);
       this.scene.fog.near = 30 + f * 200; this.scene.fog.far = fogFar + f * 600;
     }
@@ -354,13 +362,45 @@
       this.buildSpine(L);
       L.rooms.forEach((R, i) => this.buildRoom(R, i)); onProgress && onProgress(0.9);
       this.buildFinale(L);
+      if (this.buildLobbyArt) this.buildLobbyArt(L);
       if (this.ultra) this.buildSpotPool();
       if (!this.low) this.grassTufts(this.ultra ? 9000 : 3500);
       // 위치 앵커
       this.anchors.unshift({ key: 'lobby', label: '로비', pos: new V3(0, 0, -6), yaw: 0 });
       this.anchors.unshift({ key: 'outside', label: '미술관 앞', pos: this.spawn.pos.clone(), yaw: this.spawn.yaw });
       this.mapShapes.push({ type: 'rect', x0: -L.BW / 2, z0: -L.BL, x1: L.BW / 2, z1: 0, color: 'rgba(255,255,255,0.10)', stroke: true });
+      this.finishInterior(L);
       this.setInside(0);
+    }
+
+    // 실내 마무리: ① 물건이 바닥에 그림자를 드리우게 하고 ② 실제 로비 모습을 반사에 씀
+    finishInterior(L) {
+      if (this.low) return;
+      const bw = L.BW / 2 + 1, v = new V3();
+      this.scene.updateMatrixWorld(true);
+      this.scene.traverse(o => {
+        if (!o.isMesh || !o.material || Array.isArray(o.material) && !o.material.length) return;
+        const m = Array.isArray(o.material) ? o.material[0] : o.material;
+        o.getWorldPosition(v);
+        if (v.z > 0.5 || v.z < -L.BL - 1 || Math.abs(v.x) > bw) return; // 건물 안에 있는 것만
+        const flat = o.geometry && (o.geometry.type === 'PlaneGeometry' || o.geometry.type === 'CircleGeometry' || o.geometry.type === 'RingGeometry');
+        if (flat) { if (m.isMeshStandardMaterial && !m.transparent && Math.abs(o.rotation.x + Math.PI / 2) < 0.01 && v.y < 1) o.receiveShadow = true; return; } // 바닥만 그림자를 받음
+        if (!m.isMeshStandardMaterial || m.transparent) return;
+        if (!o.castShadow) { o.castShadow = true; o.userData.inCast = true; }
+      });
+      // 로비 한가운데에서 둘레를 한 번 찍어, 바닥·금속·유리에 비치는 모습으로 사용
+      try {
+        const rt = new THREE.WebGLCubeRenderTarget(256, { type: THREE.HalfFloatType });
+        const cam = new THREE.CubeCamera(0.3, 300, rt); cam.position.set(0, 2.2, -L.LD / 2);
+        this.setInside(1);
+        const fog = this.scene.fog, sd = this.renderer.shadowMap.enabled; this.scene.fog = null; this.renderer.shadowMap.enabled = false;
+        try { cam.update(this.renderer, this.scene); }
+        finally { this.renderer.shadowMap.enabled = sd; this.scene.fog = fog; this.renderer.setRenderTarget(null); }
+        const pm = new THREE.PMREMGenerator(this.renderer), env = pm.fromCubemap(rt.texture).texture; pm.dispose(); rt.dispose();
+        const old = this.envIn; this.envIn = env;
+        this.inMats.forEach(m => { if (m.envMap === old) { m.envMap = env; m.needsUpdate = true; } });
+        if (old) old.dispose();
+      } catch (e) { console.warn('실내 반사 만들기 실패:', e); }
     }
 
     buildInteriorMaterials() {
@@ -368,12 +408,12 @@
       this.matWall = this.M({ color: I.wall, map: I.concreteWalls ? this.tex('concrete', 1, 1) : this.tex('plaster', 3, 3), rough: 0.92, zone: 'in' });
       this.matWallUV = I.concreteWalls ? 3.6 : 4; // wall() uv 단위
       const fmap = this.tex(I.floor, 1, 1);
-      this.matFloor = this.M({ color: new THREE.Color('#ffffff').lerp(new THREE.Color(I.floorTint), 0.55), map: fmap, rough: I.floor === 'polishedDark' ? 0.25 : I.floor === 'woodStrip' ? 0.55 : 0.6, zone: 'in', envI: I.floor === 'polishedDark' ? 1.2 : 0.6 });
+      this.matFloor = this.M({ color: new THREE.Color('#ffffff').lerp(new THREE.Color(I.floorTint), 0.55), map: fmap, rough: I.floor === 'polishedDark' ? 0.16 : I.floor === 'woodStrip' ? 0.34 : 0.3, zone: 'in', envI: I.floor === 'polishedDark' ? 1.3 : 0.85 });
       this.matCeil = this.M({ color: I.dark ? '#121214' : (I.ceiling === 'concrete' ? '#bdbab3' : I.ceiling === 'wood' ? '#ffffff' : '#f6f5f2'), map: I.ceiling === 'concrete' ? this.tex('concrete', 4, 4) : I.ceiling === 'wood' ? this.tex('wood', 8, 8) : null, rough: 0.95, zone: 'in' });
       this.matTrim = this.M({ color: I.trim, rough: 0.5, metal: 0.2, zone: 'in' });
       this.matLight = this.Basic(I.light, I.dark ? 1.6 : 2.4);
     }
-    floorMat(w, d) { const m = this.matFloor.clone(); m.map = this.matFloor.map.clone(); m.map.needsUpdate = true; const s = this.m.interior.floor === 'woodStrip' ? 6 : 5; m.map.repeat.set(w / s, d / s); this.textures.push(m.map); return m; }
+    floorMat(w, d) { const m = this.matFloor.clone(); this.inMats.push(m); m.map = this.matFloor.map.clone(); m.map.needsUpdate = true; const s = this.m.interior.floor === 'woodStrip' ? 6 : 5; m.map.repeat.set(w / s, d / s); this.textures.push(m.map); return m; }
     iwall(ax, az, bx, bz, h, o = {}) { return this.wall(ax, az, bx, bz, h, o.mat || this.matWall, { thick: o.thick ?? 0.3, uv: this.matWallUV, collide: o.collide, y0: o.y0 }); }
 
     /* ---------- 복도(스파인) ---------- */
@@ -494,6 +534,15 @@
       R.rect = rect;
     }
 
+    // 벽에 걸린 것 뒤로 번지는 부드러운 그림자 (모두 함께 쓰는 재질)
+    dropMat() {
+      if (this._dropMat) return this._dropMat;
+      const cv = Tex.canvas(256, 256), c = cv.getContext('2d');
+      c.fillStyle = '#000'; c.fillRect(0, 0, 256, 256);
+      c.shadowColor = '#fff'; c.shadowBlur = 22; c.fillStyle = '#fff'; c.fillRect(36, 36, 184, 184); c.fillRect(36, 36, 184, 184);
+      const t = new THREE.CanvasTexture(cv); this.textures.push(t);
+      return this._dropMat = new THREE.MeshBasicMaterial({ color: 0x000000, alphaMap: t, transparent: true, opacity: this.m.interior.dark ? 0.5 : 0.34, depthWrite: false });
+    }
     lightPool(x, y, z, ry, w, h, op = 0.5) {
       if (!this._poolTex) this._poolTex = this.tex('lightPool', 1, 1, false);
       const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(this.m.interior.light), alphaMap: this._poolTex, transparent: true, opacity: op, depthWrite: false, blending: THREE.AdditiveBlending });
@@ -520,6 +569,7 @@
       const g = new THREE.Group(); g.position.set(x, 1.68, z); g.rotation.y = ry; this.scene.add(g);
       const frameM = this.M({ color: I.trim, rough: 0.45, metal: dark ? 0.6 : 0.15, zone: 'in' });
       const frame = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 0.06), frameM); frame.position.z = 0.03; g.add(frame);
+      const drop = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), this.dropMat()); drop.position.set(0.02, -0.05, 0.0015); drop.renderOrder = 1; g.add(drop);
       const matM = this.M({ color: dark ? '#0e0e10' : '#fbfaf7', rough: 0.95, zone: 'in' });
       const mat = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), matM); mat.position.z = 0.061; g.add(mat);
       const imgM = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.75, metalness: 0, emissive: '#ffffff', emissiveIntensity: dark ? 0.85 : 0.45 });
@@ -539,7 +589,7 @@
       const lens = new THREE.Mesh(new THREE.CircleGeometry(0.06, 12), this.Basic(I.light, 3)); lens.position.set(0, -0.112, 0); lens.rotation.x = Math.PI / 2; can.add(lens);
       const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.2, 4), can.material); rod.position.set(0, GALLERY_H - 1.68 - 0.1, 1.6); g.add(rod);
 
-      const slot = { art, g, frame, mat, img, cap: capM, pool, x, z, ry, nx, nz, w: 1.2, h: 1.2, loaded: false };
+      const slot = { art, g, frame, mat, img, drop, cap: capM, pool, x, z, ry, nx, nz, w: 1.2, h: 1.2, loaded: false };
       this.artSlots.push(slot);
       art.slot = slot;
       this.sizeArt(slot, 1.25, 1.25);
@@ -548,6 +598,7 @@
       const dark = !!this.m.interior.dark, f = 0.045, mt = dark ? 0.02 : Math.min(w, h) * 0.12;
       s.w = w; s.h = h;
       s.img.scale.set(w, h, 1); s.mat.scale.set(w + mt * 2, h + mt * 2, 1); s.frame.scale.set(w + mt * 2 + f * 2, h + mt * 2 + f * 2, 1);
+      if (s.drop) s.drop.scale.set((w + mt * 2 + f * 2) * 1.22, (h + mt * 2 + f * 2) * 1.22, 1);
       s.cap.position.set(w / 2 + mt + f + 0.36, -0.42, 0.004);
       s.pool.scale.set(w + 1.5, h + 2.0, 1);
     }
@@ -614,6 +665,10 @@
         d.col.on = d.open < 0.6;
       }
       for (const u of this.updaters) u(dt, this.time, playerPos);
+      if (!this.low && this.inDir.castShadow) { // 0.5m 칸에 맞춰 옮겨 그림자가 떨리지 않게
+        const sx = Math.round(playerPos.x * 2) / 2, sz = Math.round(playerPos.z * 2) / 2;
+        this.inDir.position.set(sx + 0.7, IN_LIGHT_Y, sz + 0.45); this.inDir.target.position.set(sx, 0, sz); this.inDir.target.updateMatrixWorld();
+      }
       if (((this.time * 4) | 0) !== this._lastPump) { this._lastPump = (this.time * 4) | 0; this.pumpLoads(playerPos); }
     }
 

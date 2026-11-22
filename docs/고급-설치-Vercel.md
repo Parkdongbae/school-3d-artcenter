@@ -7,7 +7,7 @@
 > - 주소 뒤에 긴 글자가 붙지 않는 학교 전용 주소(`우리학교.vercel.app`)를 쓰고 싶다
 > - 비속어 목록·자동 확인 간격을 모든 기기에 한 번에 바꾸고 싶다
 >
-> 그림으로 된 설명: [선생님용 매뉴얼 PDF](../manual/teacher-manual.pdf)
+> 그림으로 된 설명: [예전 매뉴얼 PDF](../manual/teacher-manual-advanced.pdf)
 
 ## 준비물
 

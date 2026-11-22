@@ -1,14 +1,14 @@
 /* =========================================================
- * Post: 초고해상도용 후처리 (MSAA · 블룸 · 비네팅 · 미세 입자)
+ * Post: 후처리 (MSAA · 블룸 · 색 보정 · 비네팅 · 미세 입자) — 화질 '높음'·'초고해상도'에서 사용
  *  - 장면을 HDR 렌더 타깃에 그린 뒤 밝은 부분을 번지게 합성
  * ========================================================= */
 (function () {
   const VS = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }';
   class Post {
-    constructor(renderer) {
+    constructor(renderer, o = {}) {
       this.r = renderer;
       const opt = { type: THREE.HalfFloatType, colorSpace: THREE.LinearSRGBColorSpace };
-      this.rtScene = new THREE.WebGLRenderTarget(4, 4, { ...opt, samples: 4 });
+      this.rtScene = new THREE.WebGLRenderTarget(4, 4, { ...opt, samples: o.samples ?? 4 });
       this.rtA = new THREE.WebGLRenderTarget(4, 4, opt); this.rtB = new THREE.WebGLRenderTarget(4, 4, opt);
       this.rtC = new THREE.WebGLRenderTarget(4, 4, opt); this.rtD = new THREE.WebGLRenderTarget(4, 4, opt);
       this.cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -21,7 +21,7 @@
             c += (texture2D(t, vUv + dir * 1.3846).rgb + texture2D(t, vUv - dir * 1.3846).rgb) * .3162162;
             c += (texture2D(t, vUv + dir * 3.2308).rgb + texture2D(t, vUv - dir * 3.2308).rgb) * .0702703;
             gl_FragColor = vec4(c, 1.); }` });
-      this.comp = new THREE.ShaderMaterial({ uniforms: { tS: { value: null }, tB1: { value: null }, tB2: { value: null }, k: { value: 0.55 }, time: { value: 0 } }, vertexShader: VS,
+      this.comp = new THREE.ShaderMaterial({ uniforms: { tS: { value: null }, tB1: { value: null }, tB2: { value: null }, k: { value: o.bloom ?? 0.55 }, time: { value: 0 } }, vertexShader: VS,
         fragmentShader: `uniform sampler2D tS, tB1, tB2; uniform float k, time; varying vec2 vUv;
           float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
           void main(){ vec3 c = texture2D(tS, vUv).rgb + (texture2D(tB1, vUv).rgb * .6 + texture2D(tB2, vUv).rgb * .8) * k;
@@ -29,7 +29,11 @@
             gl_FragColor = vec4(c, 1.);
             #include <tonemapping_fragment>
             #include <colorspace_fragment>
-            gl_FragColor.rgb += (h(vUv * 1000. + time) - .5) * .012;
+            vec3 g = gl_FragColor.rgb; float l = dot(g, vec3(.2126, .7152, .0722));
+            g = mix(vec3(l), g, 1.08);                          // 채도 살짝
+            g = mix(g, g * g * (3. - 2. * g), .22);             // 부드러운 S 곡선 대비
+            g *= vec3(1.012, 1., .985);                         // 아주 약한 따뜻한 기운
+            gl_FragColor.rgb = g + (h(vUv * 1000. + time) - .5) * .012;
           }` });
       this.setSize(innerWidth, innerHeight);
     }
